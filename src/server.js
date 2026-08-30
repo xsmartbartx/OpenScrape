@@ -5,15 +5,16 @@ import { dirname, join } from 'node:path';
 import { createStore } from './store.js';
 import { extractRow, fetchHtml } from './extractor.js';
 import { validateRobot } from './validation.js';
+import { assertRobotsAllowed } from './robots.js';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const publicDir = join(root, 'public');
 
-export function createApp({ store = createStore({ filePath: join(root, 'data', 'openscrape.json') }), htmlFetcher = fetchHtml } = {}) {
+export function createApp({ store = createStore({ filePath: join(root, 'data', 'openscrape.json') }), htmlFetcher = fetchHtml, robotsChecker = assertRobotsAllowed } = {}) {
   const server = createServer(async (request, response) => {
     try {
       const url = new URL(request.url, 'http://localhost');
-      if (url.pathname.startsWith('/api/')) return await handleApi(request, response, url, store, htmlFetcher);
+      if (url.pathname.startsWith('/api/')) return await handleApi(request, response, url, store, htmlFetcher, robotsChecker);
       if (request.method !== 'GET') return send(response, 405, { error: 'Method not allowed.' });
       const file = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
       if (!/^[\w./-]+$/.test(file)) return send(response, 404, { error: 'Not found.' });
@@ -29,7 +30,7 @@ export function createApp({ store = createStore({ filePath: join(root, 'data', '
   return { server, store };
 }
 
-async function handleApi(request, response, url, store, htmlFetcher) {
+async function handleApi(request, response, url, store, htmlFetcher, robotsChecker) {
   const parts = url.pathname.split('/').filter(Boolean);
   if (request.method === 'GET' && url.pathname === '/api/health') return send(response, 200, { status: 'ok' });
   if (request.method === 'GET' && url.pathname === '/api/robots') return send(response, 200, { robots: store.robots });
@@ -46,10 +47,14 @@ async function handleApi(request, response, url, store, htmlFetcher) {
     const robot = store.robots.find((item) => item.id === parts[2]);
     if (!robot) return send(response, 404, { error: 'Robot not found.' });
     const run = await store.createRun(robot.id);
-    executeRun(store, run, robot, htmlFetcher);
+    executeRun(store, run, robot, htmlFetcher, robotsChecker);
     return send(response, 202, { run });
   }
   if (request.method === 'GET' && url.pathname === '/api/runs') return send(response, 200, { runs: store.runs });
+  if (request.method === 'GET' && parts[1] === 'runs' && parts[2] && parts.length === 3) {
+    const run = store.runs.find((item) => item.id === parts[2]);
+    return run ? send(response, 200, { run }) : send(response, 404, { error: 'Run not found.' });
+  }
   if (request.method === 'GET' && parts[1] === 'runs' && parts[2] && parts[3] === 'results') {
     const results = store.results.filter((item) => item.runId === parts[2]);
     return send(response, 200, { results });
@@ -63,14 +68,25 @@ async function handleApi(request, response, url, store, htmlFetcher) {
   return send(response, 404, { error: 'Not found.' });
 }
 
-export async function executeRun(store, run, robot, htmlFetcher) {
+export async function executeRun(store, run, robot, htmlFetcher, robotsChecker = assertRobotsAllowed) {
   await store.updateRun(run.id, { status: 'running', startedAt: new Date().toISOString() });
+  await store.addRunEvent(run.id, { message: 'Worker started.' });
   try {
+    if (robot.respectRobotsTxt) {
+      const policy = await robotsChecker(robot.startUrl);
+      await store.addRunEvent(run.id, { level: policy.allowed ? 'info' : 'warning', message: policy.reason });
+      if (!policy.allowed) throw new Error(`Run blocked: ${policy.reason}`);
+    } else {
+      await store.addRunEvent(run.id, { level: 'warning', message: 'robots.txt check was disabled for this robot.' });
+    }
+    await store.addRunEvent(run.id, { message: 'Fetching page.' });
     const html = await htmlFetcher(robot.startUrl);
     const row = extractRow(html, robot.fields);
     await store.addResults(run.id, robot.id, [row]);
+    await store.addRunEvent(run.id, { message: `Extracted ${Object.keys(row).length} field(s).` });
     await store.updateRun(run.id, { status: 'success', finishedAt: new Date().toISOString(), stats: { pages: 1, items: 1, errors: 0 } });
   } catch (error) {
+    await store.addRunEvent(run.id, { level: 'error', message: error.message });
     await store.updateRun(run.id, { status: 'failed', finishedAt: new Date().toISOString(), stats: { pages: 0, items: 0, errors: 1 }, error: error.message });
   }
 }

@@ -73,7 +73,7 @@ export function createStore({ filePath } = {}) {
   }
 
   async function createRun(robotId) {
-    const run = { id: randomUUID(), robotId, status: 'queued', trigger: 'manual', createdAt: now(), startedAt: null, finishedAt: null, stats: null, error: null };
+    const run = { id: randomUUID(), robotId, status: 'queued', trigger: 'manual', createdAt: now(), startedAt: null, finishedAt: null, stats: null, error: null, events: [{ at: now(), level: 'info', message: 'Run queued.' }] };
     state.runs.unshift(run);
     await save();
     return run;
@@ -87,6 +87,15 @@ export function createStore({ filePath } = {}) {
     return run;
   }
 
+  async function addRunEvent(id, event) {
+    const run = state.runs.find((item) => item.id === id);
+    if (!run) return null;
+    run.events ??= [];
+    run.events.push({ at: now(), level: event.level ?? 'info', message: event.message });
+    await save();
+    return run;
+  }
+
   async function addResults(runId, robotId, rows) {
     const records = rows.map((row) => ({ id: randomUUID(), runId, robotId, data: row, createdAt: now() }));
     state.results.unshift(...records);
@@ -95,7 +104,7 @@ export function createStore({ filePath } = {}) {
   }
 
   return {
-    load, createRobot, updateRobot, deleteRobot, createRun, updateRun, addResults,
+    load, createRobot, updateRobot, deleteRobot, createRun, updateRun, addRunEvent, addResults,
     get robots() { return state.robots; },
     get runs() { return state.runs; },
     get results() { return state.results; }
