@@ -1,0 +1,15 @@
+{
+  "name": "openscrape",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A self-hostable no-code web data platform (MVP)",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
