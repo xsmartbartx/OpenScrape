@@ -1,3 +1,5 @@
+import { validateCron, validateTimeZone } from './scheduler.js';
+
 export function validateRobot(input) {
   const errors = [];
   if (!input || typeof input !== 'object') return ['A JSON robot body is required.'];
@@ -16,5 +18,13 @@ export function validateRobot(input) {
     else { try { const url = new URL(input.paginationUrlTemplate.replaceAll('{page}', '1')); if (!['http:', 'https:'].includes(url.protocol)) errors.push('paginationUrlTemplate must use HTTP(S).'); } catch { errors.push('paginationUrlTemplate must be a valid URL template.'); } }
   }
   if (input.maxPages !== undefined && (!Number.isInteger(input.maxPages) || input.maxPages < 1 || input.maxPages > 20)) errors.push('maxPages must be an integer from 1 to 20.');
+  if (input.scheduleCron !== undefined && input.scheduleCron !== null && input.scheduleCron !== '') {
+    const cronError = validateCron(input.scheduleCron);
+    if (cronError) errors.push(cronError);
+  }
+  if (input.scheduleTimezone !== undefined && input.scheduleTimezone !== null && input.scheduleTimezone !== '') {
+    const timeZoneError = validateTimeZone(input.scheduleTimezone);
+    if (timeZoneError) errors.push(timeZoneError);
+  }
   return errors;
 }

@@ -6,6 +6,7 @@ import { createStore } from './store.js';
 import { extractRows, fetchHtml } from './extractor.js';
 import { validateRobot } from './validation.js';
 import { assertRobotsAllowed } from './robots.js';
+import { createScheduler } from './scheduler.js';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const publicDir = join(root, 'public');
@@ -27,7 +28,8 @@ export function createApp({ store = createStore({ filePath: join(root, 'data', '
       send(response, 500, { error: 'Unexpected server error.' });
     }
   });
-  return { server, store };
+  const scheduler = createScheduler({ store, runRobot: (run, robot) => executeRun(store, run, robot, htmlFetcher, robotsChecker) });
+  return { server, store, scheduler };
 }
 
 async function handleApi(request, response, url, store, htmlFetcher, robotsChecker) {
@@ -117,5 +119,8 @@ async function jsonBody(request) { let body = ''; for await (const chunk of requ
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const app = createApp();
   await app.store.load();
-  app.server.listen(process.env.PORT ?? 3000, () => console.log(`OpenScrape is running at http://localhost:${process.env.PORT ?? 3000}`));
+  app.server.listen(process.env.PORT ?? 3000, () => {
+    app.scheduler.start();
+    console.log(`OpenScrape is running at http://localhost:${process.env.PORT ?? 3000}`);
+  });
 }

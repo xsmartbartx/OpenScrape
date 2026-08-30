@@ -41,6 +41,8 @@ export function createStore({ filePath } = {}) {
       maxRows: input.maxRows ?? 50,
       paginationUrlTemplate: input.paginationUrlTemplate?.trim() || null,
       maxPages: input.maxPages ?? 1,
+      scheduleCron: input.scheduleCron?.trim() || null,
+      scheduleTimezone: input.scheduleTimezone?.trim() || 'UTC',
       respectRobotsTxt: input.respectRobotsTxt !== false,
       createdAt: timestamp,
       updatedAt: timestamp
@@ -62,6 +64,8 @@ export function createStore({ filePath } = {}) {
       maxRows: input.maxRows ?? 50,
       paginationUrlTemplate: input.paginationUrlTemplate?.trim() || null,
       maxPages: input.maxPages ?? 1,
+      scheduleCron: input.scheduleCron?.trim() || null,
+      scheduleTimezone: input.scheduleTimezone?.trim() || 'UTC',
       respectRobotsTxt: input.respectRobotsTxt !== false,
       updatedAt: now()
     });
@@ -80,8 +84,8 @@ export function createStore({ filePath } = {}) {
     return true;
   }
 
-  async function createRun(robotId) {
-    const run = { id: randomUUID(), robotId, status: 'queued', trigger: 'manual', createdAt: now(), startedAt: null, finishedAt: null, stats: null, error: null, events: [{ at: now(), level: 'info', message: 'Run queued.' }] };
+  async function createRun(robotId, trigger = 'manual') {
+    const run = { id: randomUUID(), robotId, status: 'queued', trigger, createdAt: now(), startedAt: null, finishedAt: null, stats: null, error: null, events: [{ at: now(), level: 'info', message: 'Run queued.' }] };
     state.runs.unshift(run);
     await save();
     return run;

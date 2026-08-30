@@ -42,3 +42,9 @@ test('validates URL-template pagination options', () => {
   assert.match(validateRobot({ name: 'Pages', startUrl: 'https://example.com', fields: [{ name: 'title', selector: 'h1' }], paginationUrlTemplate: 'https://example.com/list', maxPages: 21 }).join(' '), /paginationUrlTemplate.*maxPages/);
   assert.deepEqual(validateRobot({ name: 'Pages', startUrl: 'https://example.com', fields: [{ name: 'title', selector: 'h1' }], paginationUrlTemplate: 'https://example.com/list?page={page}', maxPages: 3 }), []);
 });
+
+test('validates schedule options', () => {
+  const base = { name: 'Scheduled', startUrl: 'https://example.com', fields: [{ name: 'title', selector: 'h1' }] };
+  assert.deepEqual(validateRobot({ ...base, scheduleCron: '0 9 * * 1-5', scheduleTimezone: 'Europe/Warsaw' }), []);
+  assert.match(validateRobot({ ...base, scheduleCron: 'weekday mornings', scheduleTimezone: 'Mars/Olympus' }).join(' '), /five-field.*IANA timezone/);
+});

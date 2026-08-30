@@ -7,18 +7,19 @@ OpenScrape is a self-hostable, no-code web-data platform. The goal is to let a p
 This repository now includes the first end-to-end vertical slice:
 
 - Dashboard to create, edit, delete, and run robots
-- One public HTTP(S) page per run
+- Public HTTP(S) page fetching
 - Field mapping using the simple selectors `tag`, `.class`, and `#id`
 - Repeated-record extraction from list/card elements, with a configurable 1–100 record limit
 - Multi-page runs through a safe, explicit `{page}` URL template (up to 20 pages)
 - Source URL and page number retained for every result
 - Persistent local JSON store at `data/openscrape.json`
 - `robots.txt` preflight enforcement by default, including `Allow`, `Disallow`, wildcard, and end-anchor rules
+- Cron schedules with IANA timezones while the local server is running
 - Run status, results, and execution-event viewer
 - CSV export from a completed run
 - No runtime dependencies; Node 20+ is enough
 
-It is intentionally not yet a production scraper. It does **not** support JavaScript-rendered pages, recordings, robust CSS/XPath selector replay, auth sessions, crawling, scheduling, AI extraction, Redis, Postgres, or multi-user auth. `robots.txt` is checked as a preflight, but production-grade rate limiting and Playwright-level enforcement remain future work. The dashboard labels this honestly.
+It is intentionally not yet a production scraper. It does **not** support JavaScript-rendered pages, recordings, robust CSS/XPath selector replay, auth sessions, crawling, AI extraction, Redis, Postgres, or multi-user auth. Schedules run only while this server process is alive—there is no missed-run recovery or distributed job queue yet. `robots.txt` is checked as a preflight, but production-grade rate limiting and Playwright-level enforcement remain future work. The dashboard labels this honestly.
 
 ## Run locally
 
@@ -66,6 +67,17 @@ https://example.com/products?page={page}
 
 Choose up to 20 pages. Every generated URL is checked against `robots.txt`, results preserve their page/source metadata, and the robot stops as soon as its global record limit is reached. This is deliberately explicit; click-button and infinite-scroll pagination need the planned Playwright worker.
 
+## Schedule a robot
+
+Set an optional five-field numeric cron expression and IANA timezone in the robot form. For example, to run at 09:00 on weekdays in Warsaw:
+
+```text
+Cron expression: 0 9 * * 1-5
+Timezone: Europe/Warsaw
+```
+
+The fields are minute, hour, day of month, month, and weekday (`0` = Sunday). The scheduler evaluates once per minute while `npm start` or `npm run dev` is running; scheduled runs are labelled in run history. It does not backfill a schedule after the server was stopped.
+
 ## API
 
 The dashboard uses the same small JSON API:
@@ -91,6 +103,8 @@ Robot creation body:
   "fields": [{ "name": "headline", "selector": "h1" }],
   "paginationUrlTemplate": "https://example.com/products?page={page}",
   "maxPages": 5,
+  "scheduleCron": "0 9 * * 1-5",
+  "scheduleTimezone": "Europe/Warsaw",
   "rowSelector": ".product-card",
   "maxRows": 50,
   "respectRobotsTxt": true
@@ -103,7 +117,7 @@ Robot creation body:
 2. Add Redis/BullMQ workers and robust execution/audit logs.
 3. Add Playwright, rate limits, screenshots, and selector generation/replay.
 4. Build the click-to-select recorder and repeat/pagination support.
-5. Add crawling, schedules, API keys, webhooks/exports, and AI schema extraction.
+5. Add crawling, durable schedules, API keys, webhooks/exports, and AI schema extraction.
 6. Package the services in Docker Compose with MinIO object storage.
 
 ## Architecture target
