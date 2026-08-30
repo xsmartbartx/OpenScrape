@@ -39,6 +39,8 @@ export function createStore({ filePath } = {}) {
       fields: input.fields,
       rowSelector: input.rowSelector?.trim() || null,
       maxRows: input.maxRows ?? 50,
+      paginationUrlTemplate: input.paginationUrlTemplate?.trim() || null,
+      maxPages: input.maxPages ?? 1,
       respectRobotsTxt: input.respectRobotsTxt !== false,
       createdAt: timestamp,
       updatedAt: timestamp
@@ -58,6 +60,8 @@ export function createStore({ filePath } = {}) {
       fields: input.fields,
       rowSelector: input.rowSelector?.trim() || null,
       maxRows: input.maxRows ?? 50,
+      paginationUrlTemplate: input.paginationUrlTemplate?.trim() || null,
+      maxPages: input.maxPages ?? 1,
       respectRobotsTxt: input.respectRobotsTxt !== false,
       updatedAt: now()
     });
@@ -100,9 +104,9 @@ export function createStore({ filePath } = {}) {
     return run;
   }
 
-  async function addResults(runId, robotId, rows) {
-    const records = rows.map((row) => ({ id: randomUUID(), runId, robotId, data: row, createdAt: now() }));
-    state.results.unshift(...records);
+  async function addResults(runId, robotId, rows, { sourceUrl = null, pageIndex = null } = {}) {
+    const records = rows.map((row) => ({ id: randomUUID(), runId, robotId, data: row, sourceUrl, pageIndex, createdAt: now() }));
+    state.results.push(...records);
     await save();
     return records;
   }

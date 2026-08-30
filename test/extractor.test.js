@@ -37,3 +37,8 @@ test('validates the required robot fields', () => {
 test('validates repeated-record options', () => {
   assert.match(validateRobot({ name: 'List', startUrl: 'https://example.com', fields: [{ name: 'title', selector: 'h2' }], rowSelector: '', maxRows: 101 }).join(' '), /rowSelector.*maxRows/);
 });
+
+test('validates URL-template pagination options', () => {
+  assert.match(validateRobot({ name: 'Pages', startUrl: 'https://example.com', fields: [{ name: 'title', selector: 'h1' }], paginationUrlTemplate: 'https://example.com/list', maxPages: 21 }).join(' '), /paginationUrlTemplate.*maxPages/);
+  assert.deepEqual(validateRobot({ name: 'Pages', startUrl: 'https://example.com', fields: [{ name: 'title', selector: 'h1' }], paginationUrlTemplate: 'https://example.com/list?page={page}', maxPages: 3 }), []);
+});

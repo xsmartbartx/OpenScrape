@@ -10,6 +10,8 @@ This repository now includes the first end-to-end vertical slice:
 - One public HTTP(S) page per run
 - Field mapping using the simple selectors `tag`, `.class`, and `#id`
 - Repeated-record extraction from list/card elements, with a configurable 1–100 record limit
+- Multi-page runs through a safe, explicit `{page}` URL template (up to 20 pages)
+- Source URL and page number retained for every result
 - Persistent local JSON store at `data/openscrape.json`
 - `robots.txt` preflight enforcement by default, including `Allow`, `Disallow`, wildcard, and end-anchor rules
 - Run status, results, and execution-event viewer
@@ -54,6 +56,16 @@ page_title = #title
 
 Leave **Record selector** empty to return one record from the whole page. To extract a product or article list, use a selector such as `.product-card`; OpenScrape will apply every field to each matching card (up to the configured limit). The MVP returns the first matching element for each field inside a record. It fetches only public pages; use it only where you have permission to collect the data and where the target site’s rules allow it.
 
+## Paginate a list
+
+For a server-rendered page-number list, set **Page URL template** to a URL containing `{page}`, for example:
+
+```text
+https://example.com/products?page={page}
+```
+
+Choose up to 20 pages. Every generated URL is checked against `robots.txt`, results preserve their page/source metadata, and the robot stops as soon as its global record limit is reached. This is deliberately explicit; click-button and infinite-scroll pagination need the planned Playwright worker.
+
 ## API
 
 The dashboard uses the same small JSON API:
@@ -77,6 +89,8 @@ Robot creation body:
   "startUrl": "https://example.com",
   "description": "Gets the page headline",
   "fields": [{ "name": "headline", "selector": "h1" }],
+  "paginationUrlTemplate": "https://example.com/products?page={page}",
+  "maxPages": 5,
   "rowSelector": ".product-card",
   "maxRows": 50,
   "respectRobotsTxt": true

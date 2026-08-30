@@ -62,7 +62,8 @@ async function handleApi(request, response, url, store, htmlFetcher, robotsCheck
   if (request.method === 'GET' && parts[1] === 'runs' && parts[2] && parts[3] === 'export.csv') {
     const results = store.results.filter((item) => item.runId === parts[2]);
     const fields = [...new Set(results.flatMap((row) => Object.keys(row.data)))];
-    const csv = [fields, ...results.map((row) => fields.map((key) => row.data[key] ?? ''))].map((row) => row.map(csvValue).join(',')).join('\n');
+    const headers = ['page_index', 'source_url', ...fields];
+    const csv = [headers, ...results.map((row) => [row.pageIndex ?? '', row.sourceUrl ?? '', ...fields.map((key) => row.data[key] ?? '')])].map((row) => row.map(csvValue).join(',')).join('\n');
     response.writeHead(200, { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': `attachment; filename="run-${parts[2]}.csv"` }); return response.end(csv);
   }
   return send(response, 404, { error: 'Not found.' });
@@ -71,24 +72,41 @@ async function handleApi(request, response, url, store, htmlFetcher, robotsCheck
 export async function executeRun(store, run, robot, htmlFetcher, robotsChecker = assertRobotsAllowed) {
   await store.updateRun(run.id, { status: 'running', startedAt: new Date().toISOString() });
   await store.addRunEvent(run.id, { message: 'Worker started.' });
+  let pages = 0;
+  let rows = [];
   try {
-    if (robot.respectRobotsTxt) {
-      const policy = await robotsChecker(robot.startUrl);
-      await store.addRunEvent(run.id, { level: policy.allowed ? 'info' : 'warning', message: policy.reason });
-      if (!policy.allowed) throw new Error(`Run blocked: ${policy.reason}`);
-    } else {
+    const pageUrls = paginationUrls(robot);
+    if (!robot.respectRobotsTxt) {
       await store.addRunEvent(run.id, { level: 'warning', message: 'robots.txt check was disabled for this robot.' });
     }
-    await store.addRunEvent(run.id, { message: 'Fetching page.' });
-    const html = await htmlFetcher(robot.startUrl);
-    const rows = extractRows(html, robot.fields, robot.rowSelector, robot.maxRows);
-    await store.addResults(run.id, robot.id, rows);
+    for (const [index, pageUrl] of pageUrls.entries()) {
+      if (rows.length >= (robot.maxRows ?? 50)) break;
+      if (robot.respectRobotsTxt) {
+        const policy = await robotsChecker(pageUrl);
+        await store.addRunEvent(run.id, { level: policy.allowed ? 'info' : 'warning', message: `Page ${index + 1}: ${policy.reason}` });
+        if (!policy.allowed) throw new Error(`Run blocked: ${policy.reason}`);
+      }
+      await store.addRunEvent(run.id, { message: `Fetching page ${index + 1} of ${pageUrls.length}.` });
+      const html = await htmlFetcher(pageUrl);
+      pages += 1;
+      const remaining = Math.max((robot.maxRows ?? 50) - rows.length, 0);
+      const pageRows = extractRows(html, robot.fields, robot.rowSelector, remaining);
+      rows.push(...pageRows.map((data) => ({ data, sourceUrl: pageUrl, pageIndex: index + 1 })));
+      await store.addRunEvent(run.id, { message: `Page ${index + 1}: extracted ${pageRows.length} row(s).` });
+      if (rows.length >= (robot.maxRows ?? 50)) break;
+    }
+    for (const result of rows) await store.addResults(run.id, robot.id, [result.data], result);
     await store.addRunEvent(run.id, { message: `Extracted ${rows.length} row(s) across ${robot.fields.length} field(s).` });
-    await store.updateRun(run.id, { status: 'success', finishedAt: new Date().toISOString(), stats: { pages: 1, items: rows.length, errors: 0 } });
+    await store.updateRun(run.id, { status: 'success', finishedAt: new Date().toISOString(), stats: { pages, items: rows.length, errors: 0 } });
   } catch (error) {
     await store.addRunEvent(run.id, { level: 'error', message: error.message });
-    await store.updateRun(run.id, { status: 'failed', finishedAt: new Date().toISOString(), stats: { pages: 0, items: 0, errors: 1 }, error: error.message });
+    await store.updateRun(run.id, { status: 'failed', finishedAt: new Date().toISOString(), stats: { pages, items: rows.length, errors: 1 }, error: error.message });
   }
+}
+
+export function paginationUrls(robot) {
+  if (!robot.paginationUrlTemplate) return [robot.startUrl];
+  return Array.from({ length: robot.maxPages ?? 1 }, (_, index) => robot.paginationUrlTemplate.replaceAll('{page}', String(index + 1)));
 }
 
 function csvValue(value) { const text = String(value); return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text; }

@@ -11,5 +11,10 @@ export function validateRobot(input) {
   });
   if (input.rowSelector !== undefined && input.rowSelector !== null && (typeof input.rowSelector !== 'string' || !input.rowSelector.trim())) errors.push('rowSelector must be a non-empty selector when provided.');
   if (input.maxRows !== undefined && (!Number.isInteger(input.maxRows) || input.maxRows < 1 || input.maxRows > 100)) errors.push('maxRows must be an integer from 1 to 100.');
+  if (input.paginationUrlTemplate !== undefined && input.paginationUrlTemplate !== null) {
+    if (typeof input.paginationUrlTemplate !== 'string' || !input.paginationUrlTemplate.includes('{page}')) errors.push('paginationUrlTemplate must include {page}.');
+    else { try { const url = new URL(input.paginationUrlTemplate.replaceAll('{page}', '1')); if (!['http:', 'https:'].includes(url.protocol)) errors.push('paginationUrlTemplate must use HTTP(S).'); } catch { errors.push('paginationUrlTemplate must be a valid URL template.'); } }
+  }
+  if (input.maxPages !== undefined && (!Number.isInteger(input.maxPages) || input.maxPages < 1 || input.maxPages > 20)) errors.push('maxPages must be an integer from 1 to 20.');
   return errors;
 }
