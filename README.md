@@ -9,6 +9,7 @@ This repository now includes the first end-to-end vertical slice:
 - Dashboard to create, edit, delete, and run robots
 - One public HTTP(S) page per run
 - Field mapping using the simple selectors `tag`, `.class`, and `#id`
+- Repeated-record extraction from list/card elements, with a configurable 1–100 record limit
 - Persistent local JSON store at `data/openscrape.json`
 - `robots.txt` preflight enforcement by default, including `Allow`, `Disallow`, wildcard, and end-anchor rules
 - Run status, results, and execution-event viewer
@@ -51,7 +52,7 @@ summary = .summary
 page_title = #title
 ```
 
-The MVP returns the first matching element for every field. It fetches only public pages; use it only where you have permission to collect the data and where the target site’s rules allow it.
+Leave **Record selector** empty to return one record from the whole page. To extract a product or article list, use a selector such as `.product-card`; OpenScrape will apply every field to each matching card (up to the configured limit). The MVP returns the first matching element for each field inside a record. It fetches only public pages; use it only where you have permission to collect the data and where the target site’s rules allow it.
 
 ## API
 
@@ -76,6 +77,8 @@ Robot creation body:
   "startUrl": "https://example.com",
   "description": "Gets the page headline",
   "fields": [{ "name": "headline", "selector": "h1" }],
+  "rowSelector": ".product-card",
+  "maxRows": 50,
   "respectRobotsTxt": true
 }
 ```

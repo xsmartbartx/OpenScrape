@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { createStore } from './store.js';
-import { extractRow, fetchHtml } from './extractor.js';
+import { extractRows, fetchHtml } from './extractor.js';
 import { validateRobot } from './validation.js';
 import { assertRobotsAllowed } from './robots.js';
 
@@ -81,10 +81,10 @@ export async function executeRun(store, run, robot, htmlFetcher, robotsChecker =
     }
     await store.addRunEvent(run.id, { message: 'Fetching page.' });
     const html = await htmlFetcher(robot.startUrl);
-    const row = extractRow(html, robot.fields);
-    await store.addResults(run.id, robot.id, [row]);
-    await store.addRunEvent(run.id, { message: `Extracted ${Object.keys(row).length} field(s).` });
-    await store.updateRun(run.id, { status: 'success', finishedAt: new Date().toISOString(), stats: { pages: 1, items: 1, errors: 0 } });
+    const rows = extractRows(html, robot.fields, robot.rowSelector, robot.maxRows);
+    await store.addResults(run.id, robot.id, rows);
+    await store.addRunEvent(run.id, { message: `Extracted ${rows.length} row(s) across ${robot.fields.length} field(s).` });
+    await store.updateRun(run.id, { status: 'success', finishedAt: new Date().toISOString(), stats: { pages: 1, items: rows.length, errors: 0 } });
   } catch (error) {
     await store.addRunEvent(run.id, { level: 'error', message: error.message });
     await store.updateRun(run.id, { status: 'failed', finishedAt: new Date().toISOString(), stats: { pages: 0, items: 0, errors: 1 }, error: error.message });

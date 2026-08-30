@@ -21,3 +21,12 @@ test('marks a run failed when robots.txt blocks its path', async () => {
   assert.match(store.runs[0].error, /robots.txt/);
   assert.equal(store.results.length, 0);
 });
+
+test('stores every matching repeated record and reports the count', async () => {
+  const store = createStore();
+  const robot = await store.createRobot({ name: 'Products', startUrl: 'https://example.com/products', rowSelector: '.product', maxRows: 2, fields: [{ name: 'name', selector: 'h2' }, { name: 'price', selector: '.price' }] });
+  const run = await store.createRun(robot.id);
+  await executeRun(store, run, robot, async () => '<article class="product"><h2>One</h2><span class="price">$1</span></article><article class="product"><h2>Two</h2><span class="price">$2</span></article>', async () => ({ allowed: true, reason: 'No matching robots.txt rule.' }));
+  assert.equal(store.runs[0].stats.items, 2);
+  assert.deepEqual(store.results.map((result) => result.data), [{ name: 'One', price: '$1' }, { name: 'Two', price: '$2' }]);
+});

@@ -9,5 +9,7 @@ export function validateRobot(input) {
     if (!field || typeof field.name !== 'string' || !field.name.trim()) errors.push(`fields[${index}].name is required.`);
     if (!field || typeof field.selector !== 'string' || !field.selector.trim()) errors.push(`fields[${index}].selector is required.`);
   });
+  if (input.rowSelector !== undefined && input.rowSelector !== null && (typeof input.rowSelector !== 'string' || !input.rowSelector.trim())) errors.push('rowSelector must be a non-empty selector when provided.');
+  if (input.maxRows !== undefined && (!Number.isInteger(input.maxRows) || input.maxRows < 1 || input.maxRows > 100)) errors.push('maxRows must be an integer from 1 to 100.');
   return errors;
 }

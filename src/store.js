@@ -37,6 +37,8 @@ export function createStore({ filePath } = {}) {
       description: input.description?.trim() ?? '',
       startUrl: input.startUrl.trim(),
       fields: input.fields,
+      rowSelector: input.rowSelector?.trim() || null,
+      maxRows: input.maxRows ?? 50,
       respectRobotsTxt: input.respectRobotsTxt !== false,
       createdAt: timestamp,
       updatedAt: timestamp
@@ -54,6 +56,8 @@ export function createStore({ filePath } = {}) {
       description: input.description?.trim() ?? '',
       startUrl: input.startUrl.trim(),
       fields: input.fields,
+      rowSelector: input.rowSelector?.trim() || null,
+      maxRows: input.maxRows ?? 50,
       respectRobotsTxt: input.respectRobotsTxt !== false,
       updatedAt: now()
     });
