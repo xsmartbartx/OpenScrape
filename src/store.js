@@ -43,6 +43,7 @@ export function createStore({ filePath } = {}) {
       maxPages: input.maxPages ?? 1,
       scheduleCron: input.scheduleCron?.trim() || null,
       scheduleTimezone: input.scheduleTimezone?.trim() || 'UTC',
+      webhookUrl: input.webhookUrl?.trim() || null,
       respectRobotsTxt: input.respectRobotsTxt !== false,
       createdAt: timestamp,
       updatedAt: timestamp
@@ -66,6 +67,7 @@ export function createStore({ filePath } = {}) {
       maxPages: input.maxPages ?? 1,
       scheduleCron: input.scheduleCron?.trim() || null,
       scheduleTimezone: input.scheduleTimezone?.trim() || 'UTC',
+      webhookUrl: input.webhookUrl?.trim() || null,
       respectRobotsTxt: input.respectRobotsTxt !== false,
       updatedAt: now()
     });
