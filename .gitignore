@@ -19,5 +19,19 @@ rad.json
 #License-files
 *.bclicense
 *.flf
+
+# Node / workspace
+node_modules/
+dist/
+.next/
+coverage/
+*.log
+.env
+.env.*
+!.env.example
+
+# Local infrastructure data
+.data/
+docker-data/
 #Test results file
 TestResults.xml
