@@ -13,12 +13,12 @@
 5. [Data Model](#5-data-model)
 6. [The Robot Recorder (No-Code Engine)](#6-the-robot-recorder-no-code-engine)
 7. [AI Extraction Mode](#7-ai-extraction-mode)
-8. [Scraping Modes: Markdown / HTML / Crawl / Search](#8-scraping-modes)
-9. [Authenticated / Login-Protected Scraping](#9-authenticated-scraping)
+8. [Scraping Modes: Markdown / HTML / Crawl / Search](#8-scraping-modes-markdown--html--crawl--search)
+9. [Authenticated / Login-Protected Scraping](#9-authenticated--login-protected-scraping)
 10. [Scheduling & Job Queue](#10-scheduling--job-queue)
 11. [Public API](#11-public-api)
 12. [SDK & CLI](#12-sdk--cli)
-13. [Integrations (Sheets, Airtable, Webhooks)](#13-integrations)
+13. [Integrations (Sheets, Airtable, Webhooks)](#13-integrations-sheets-airtable-webhooks)
 14. [Tech Stack](#14-tech-stack)
 15. [Self-Hosting & Deployment](#15-self-hosting--deployment)
 16. [Security & Anti-Blocking](#16-security--anti-blocking)
@@ -377,9 +377,9 @@ cloud deployment is called production-ready.
 ### Phase 0 — Foundation (current)
 
 - [x] Confirm MVP architecture and supported local services.
-- [ ] Create workspace packages and shared configuration.
-- [ ] Add Docker Compose for PostgreSQL, Redis, and MinIO.
-- [ ] Add environment contract and health checks.
+- [x] Create workspace packages and shared configuration.
+- [x] Add Docker Compose for PostgreSQL, Redis, and MinIO.
+- [x] Add environment contract and health checks.
 
 ### Phase 1 — First usable vertical slice
 
