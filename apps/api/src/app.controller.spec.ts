@@ -1,21 +1,21 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AppController } from './app.controller';
+import { HealthController } from './health.controller';
 
-describe('AppController', () => {
-  let controller: AppController;
+describe('HealthController', () => {
+  let controller: HealthController;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [AppController],
+      controllers: [HealthController],
     }).compile();
 
-    controller = module.get<AppController>(AppController);
+    controller = module.get<HealthController>(HealthController);
   });
 
   it('should return a health payload', () => {
     expect(controller.getHealth()).toEqual({
       status: 'ok',
-      service: 'openscrape-api',
+      service: 'api',
       timestamp: expect.any(String),
     });
   });
