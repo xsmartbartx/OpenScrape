@@ -1,21 +1,32 @@
 import { Module } from '@nestjs/common';
+import { Queue } from 'bullmq';
 import { AppController } from './app.controller';
 import { HealthController } from './health.controller';
 import { RobotsController } from './robots.controller';
 
-const queueClient = {
-  addJob: async (url: string, robotId: string) => {
-    console.log(`Queueing scrape for robot ${robotId}, url ${url}`);
-    return { id: `job-${Date.now()}` };
+const queue = new Queue('scrape', {
+  connection: {
+    host: process.env.REDIS_HOST ?? 'localhost',
+    port: Number(process.env.REDIS_PORT ?? 6379),
   },
-};
+});
 
 @Module({
   controllers: [AppController, HealthController, RobotsController],
   providers: [
     {
       provide: 'QUEUE_CLIENT',
-      useValue: queueClient,
+      useFactory: () => ({
+        addJob: async (url: string, robotId: string) => {
+          const job = await queue.add(
+            'scrape',
+            { url, robotId },
+            { removeOnComplete: true, removeOnFail: true },
+          );
+
+          return { id: job.id ?? `job-${Date.now()}` };
+        },
+      }),
     },
   ],
 })
