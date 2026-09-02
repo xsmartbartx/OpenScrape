@@ -27,7 +27,7 @@ describe('RobotsController', () => {
         robotId: 'robot-1',
         url: 'https://example.com',
         status: 'queued',
-        startedAt: expect.any(String),
+        startedAt: expect.any(Date),
         result: 'Job accepted and queued for processing.',
       },
     });
