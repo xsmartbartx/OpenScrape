@@ -1,0 +1,29 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Robot {
+  id        String   @id
+  name      String
+  type      String
+  startUrl  String
+  status    String
+  createdAt DateTime @default(now())
+  runs      Run[]
+}
+
+model Run {
+  id        String    @id
+  robotId   String
+  url       String
+  status    String
+  startedAt DateTime  @default(now())
+  finishedAt DateTime?
+  result    String?
+  robot     Robot     @relation(fields: [robotId], references: [id])
+}
