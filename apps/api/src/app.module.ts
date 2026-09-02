@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { AppController } from './app.controller';
 import { HealthController } from './health.controller';
+import { PrismaService } from './prisma.service';
 import { RobotsController } from './robots.controller';
 
 const queue = new Queue('scrape', {
@@ -14,6 +15,7 @@ const queue = new Queue('scrape', {
 @Module({
   controllers: [AppController, HealthController, RobotsController],
   providers: [
+    PrismaService,
     {
       provide: 'QUEUE_CLIENT',
       useFactory: () => ({

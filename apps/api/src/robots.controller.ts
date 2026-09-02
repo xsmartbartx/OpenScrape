@@ -1,64 +1,92 @@
 import { Body, Controller, Get, Inject, Param, Post } from '@nestjs/common';
 import type { CreateRobotInput, CreateRunInput, Robot, RunStatus } from '@openscrape/contracts';
+import { PrismaService } from './prisma.service';
 
 export type QueueClient = {
   addJob: (url: string, robotId: string) => Promise<{ id: string }>;
 };
 
-const robots: Robot[] = [
-  {
-    id: 'robot-1',
-    name: 'Product feed',
-    type: 'scrape',
-    startUrl: 'https://example.com/products',
-    status: 'ready',
-  },
-];
-
-const runs: RunStatus[] = [];
-
 @Controller('robots')
 export class RobotsController {
-  constructor(@Inject('QUEUE_CLIENT') private readonly queueClient: QueueClient) {}
+  constructor(
+    @Inject('QUEUE_CLIENT') private readonly queueClient: QueueClient,
+    private readonly prisma: PrismaService,
+  ) {}
 
   @Get()
-  getRobots(): Robot[] {
-    return robots;
+  async getRobots(): Promise<Robot[]> {
+    const robots = await this.prisma.robot.findMany();
+
+    return robots.map((robot) => ({
+      id: robot.id,
+      name: robot.name,
+      type: robot.type as Robot['type'],
+      startUrl: robot.startUrl,
+      status: robot.status as Robot['status'],
+    }));
   }
 
   @Post()
-  createRobot(@Body() body: CreateRobotInput): Robot {
-    const robot: Robot = {
-      id: `robot-${Date.now()}`,
-      name: body.name,
-      type: body.type,
-      startUrl: body.startUrl,
-      status: 'ready',
-    };
+  async createRobot(@Body() body: CreateRobotInput): Promise<Robot> {
+    const robot = await this.prisma.robot.create({
+      data: {
+        id: `robot-${Date.now()}`,
+        name: body.name,
+        type: body.type,
+        startUrl: body.startUrl,
+        status: 'ready',
+      },
+    });
 
-    robots.push(robot);
-    return robot;
+    return {
+      id: robot.id,
+      name: robot.name,
+      type: robot.type as Robot['type'],
+      startUrl: robot.startUrl,
+      status: robot.status as Robot['status'],
+    };
   }
 
   @Post(':id/runs')
   async createRun(@Param('id') robotId: string, @Body() body: Pick<CreateRunInput, 'url'>): Promise<RunStatus> {
     const queuedJob = await this.queueClient.addJob(body.url, robotId);
 
-    const run: RunStatus = {
-      id: queuedJob.id,
-      robotId,
-      url: body.url,
-      status: 'queued',
-      startedAt: new Date().toISOString(),
-      result: 'Job accepted and queued for processing.',
-    };
+    const run = await this.prisma.run.create({
+      data: {
+        id: queuedJob.id,
+        robotId,
+        url: body.url,
+        status: 'queued',
+        startedAt: new Date(),
+        result: 'Job accepted and queued for processing.',
+      },
+    });
 
-    runs.push(run);
-    return run;
+    return {
+      id: run.id,
+      robotId: run.robotId,
+      url: run.url,
+      status: run.status as RunStatus['status'],
+      startedAt: run.startedAt.toISOString(),
+      result: run.result ?? undefined,
+    };
   }
 
   @Get(':id/runs')
-  getRuns(@Param('id') robotId: string): RunStatus[] {
-    return runs.filter((run) => run.robotId === robotId);
+  async getRuns(@Param('id') robotId: string): Promise<RunStatus[]> {
+    const runs = await this.prisma.run.findMany({
+      where: { robotId },
+      orderBy: { startedAt: 'desc' },
+    });
+
+    return runs.map((run) => ({
+      id: run.id,
+      robotId: run.robotId,
+      url: run.url,
+      status: run.status as RunStatus['status'],
+      startedAt: run.startedAt.toISOString(),
+      finishedAt: run.finishedAt?.toISOString(),
+      result: run.result ?? undefined,
+    }));
   }
 }
