@@ -13,7 +13,11 @@ describe('RobotsController', () => {
     });
     const repo = {
       run: { create: runCreate },
-      robot: { findMany: jest.fn().mockResolvedValue([]), create: jest.fn() },
+      robot: {
+        findMany: jest.fn().mockResolvedValue([]),
+        findUnique: jest.fn().mockResolvedValue(null),
+        create: jest.fn().mockResolvedValue({ id: 'robot-1', name: 'Robot robot-1' }),
+      },
     };
 
     const controller = new RobotsController({ addJob } as any, repo as any);
