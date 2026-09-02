@@ -22,6 +22,9 @@ importers:
       '@openscrape/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      bullmq:
+        specifier: ^5.56.1
+        version: 5.81.4
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
