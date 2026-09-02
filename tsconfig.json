@@ -3,6 +3,6 @@
     "target": "ES2022",
     "strict": true,
     "skipLibCheck": true,
-    "noEmit": true
+    "noEmit": false
   }
 }
