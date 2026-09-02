@@ -67,7 +67,7 @@ export class RobotsController {
       robotId: run.robotId,
       url: run.url,
       status: run.status as RunStatus['status'],
-      startedAt: run.startedAt.toISOString(),
+      startedAt: this.toIsoString(run.startedAt),
       result: run.result ?? undefined,
     };
   }
@@ -84,9 +84,17 @@ export class RobotsController {
       robotId: run.robotId,
       url: run.url,
       status: run.status as RunStatus['status'],
-      startedAt: run.startedAt.toISOString(),
-      finishedAt: run.finishedAt?.toISOString(),
+      startedAt: this.toIsoString(run.startedAt),
+      finishedAt: run.finishedAt ? this.toIsoString(run.finishedAt) : undefined,
       result: run.result ?? undefined,
     }));
+  }
+
+  private toIsoString(value: Date | string): string {
+    if (value instanceof Date) {
+      return value.toISOString();
+    }
+
+    return new Date(value).toISOString();
   }
 }
