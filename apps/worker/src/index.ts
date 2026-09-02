@@ -11,14 +11,20 @@ const worker = new Worker(
     const { url } = job.data as { url: string };
     console.log(`Received scrape job ${job.id ?? 'unknown'} for ${url}`);
 
-    const response = await fetch(url);
+    const response = await fetch(url, { redirect: 'follow' });
     const html = await response.text();
 
     return {
       status: 'completed',
       url,
       title: html.match(/<title[^>]*>(.*?)<\/title>/is)?.[1]?.trim() ?? 'No title',
-      snippet: html.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<style[\s\S]*?<\/style>/gi, '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 220),
+      snippet: html
+        .replace(/<script[\s\S]*?<\/script>/gi, '')
+        .replace(/<style[\s\S]*?<\/style>/gi, '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 220),
     };
   },
   { connection },
