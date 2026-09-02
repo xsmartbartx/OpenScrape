@@ -1,5 +1,9 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Param, Post } from '@nestjs/common';
 import type { CreateRobotInput, CreateRunInput, Robot, RunStatus } from '@openscrape/contracts';
+
+export type QueueClient = {
+  addJob: (url: string, robotId: string) => Promise<{ id: string }>;
+};
 
 const robots: Robot[] = [
   {
@@ -15,6 +19,8 @@ const runs: RunStatus[] = [];
 
 @Controller('robots')
 export class RobotsController {
+  constructor(@Inject('QUEUE_CLIENT') private readonly queueClient: QueueClient) {}
+
   @Get()
   getRobots(): Robot[] {
     return robots;
@@ -35,9 +41,11 @@ export class RobotsController {
   }
 
   @Post(':id/runs')
-  createRun(@Param('id') robotId: string, @Body() body: Pick<CreateRunInput, 'url'>): RunStatus {
+  async createRun(@Param('id') robotId: string, @Body() body: Pick<CreateRunInput, 'url'>): Promise<RunStatus> {
+    const queuedJob = await this.queueClient.addJob(body.url, robotId);
+
     const run: RunStatus = {
-      id: `run-${Date.now()}`,
+      id: queuedJob.id,
       robotId,
       url: body.url,
       status: 'queued',
