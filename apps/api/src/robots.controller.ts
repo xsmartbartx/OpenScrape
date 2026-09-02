@@ -49,6 +49,20 @@ export class RobotsController {
 
   @Post(':id/runs')
   async createRun(@Param('id') robotId: string, @Body() body: Pick<CreateRunInput, 'url'>): Promise<RunStatus> {
+    const existingRobot = await this.prisma.robot.findUnique({ where: { id: robotId } });
+
+    if (!existingRobot) {
+      await this.prisma.robot.create({
+        data: {
+          id: robotId,
+          name: `Robot ${robotId}`,
+          type: 'scrape',
+          startUrl: body.url,
+          status: 'ready',
+        },
+      });
+    }
+
     const queuedJob = await this.queueClient.addJob(body.url, robotId);
 
     const run = await this.prisma.run.create({
