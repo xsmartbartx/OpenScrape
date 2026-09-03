@@ -25,5 +25,6 @@ model Run {
   startedAt DateTime  @default(now())
   finishedAt DateTime?
   result    String?
+  html      String?   @db.Text
   robot     Robot     @relation(fields: [robotId], references: [id])
 }
