@@ -3,7 +3,7 @@ import type { CreateRobotInput, CreateRunInput, Robot, RunStatus } from '@opensc
 import { PrismaService } from './prisma.service';
 
 export type QueueClient = {
-  addJob: (url: string, robotId: string) => Promise<{ id: string }>;
+  addJob: (url: string, robotId: string, jobId?: string) => Promise<{ id: string }>;
 };
 
 @Controller('robots')
@@ -63,11 +63,11 @@ export class RobotsController {
       });
     }
 
-    const queuedJob = await this.queueClient.addJob(body.url, robotId);
+    const runId = `run-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
     const run = await this.prisma.run.create({
       data: {
-        id: queuedJob.id,
+        id: runId,
         robotId,
         url: body.url,
         status: 'queued',
@@ -75,6 +75,8 @@ export class RobotsController {
         result: 'Job accepted and queued for processing.',
       },
     });
+
+    const queuedJob = await this.queueClient.addJob(body.url, robotId, run.id);
 
     return {
       id: run.id,

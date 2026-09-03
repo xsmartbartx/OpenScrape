@@ -24,10 +24,10 @@ describe('RobotsController', () => {
 
     const result = await controller.createRun('robot-1', { url: 'https://example.com' });
 
-    expect(addJob).toHaveBeenCalledWith('https://example.com', 'robot-1');
+    expect(addJob).toHaveBeenCalledWith('https://example.com', 'robot-1', expect.any(String));
     expect(runCreate).toHaveBeenCalledWith({
       data: {
-        id: 'job-123',
+        id: expect.any(String),
         robotId: 'robot-1',
         url: 'https://example.com',
         status: 'queued',
@@ -39,7 +39,7 @@ describe('RobotsController', () => {
       robotId: 'robot-1',
       url: 'https://example.com',
       status: 'queued',
-      id: 'job-123',
+      id: expect.any(String),
     });
   });
 });
