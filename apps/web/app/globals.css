@@ -167,6 +167,24 @@ button.selected { background: var(--coral); }
   margin-top: 1.5rem;
 }
 
+.panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.export-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.export-actions a {
+  color: var(--coral);
+  font-weight: 700;
+  text-decoration: none;
+}
+
 .meta {
   text-align: right;
 }
