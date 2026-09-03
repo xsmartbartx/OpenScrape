@@ -192,7 +192,15 @@ export default function HomePage() {
       </section>
 
       <section className="card run-panel">
-        <h2>Recent runs</h2>
+        <div className="panel-heading">
+          <h2>Recent runs</h2>
+          {selectedRobotId ? (
+            <div className="export-actions">
+              <a href={`http://localhost:3001/api/v1/robots/${selectedRobotId}/runs/export.json`} download>JSON</a>
+              <a href={`http://localhost:3001/api/v1/robots/${selectedRobotId}/runs/export.csv`} download>CSV</a>
+            </div>
+          ) : null}
+        </div>
         {runs.length === 0 ? (
           <p>Run history will appear here.</p>
         ) : (
