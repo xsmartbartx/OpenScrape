@@ -28,49 +28,79 @@ const defaultForm = {
 export default function HomePage() {
   const [robots, setRobots] = useState<Robot[]>([]);
   const [runs, setRuns] = useState<RunStatus[]>([]);
+  const [selectedRobotId, setSelectedRobotId] = useState<string>();
   const [form, setForm] = useState(defaultForm);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>();
 
   const fetchRobots = async () => {
     const response = await fetch('http://localhost:3001/api/v1/robots');
+    if (!response.ok) throw new Error('Could not load robots.');
     const data = await response.json();
     setRobots(data);
+    setSelectedRobotId((current) => current ?? data[0]?.id);
   };
 
   const fetchRuns = async (robotId: string) => {
     const response = await fetch(`http://localhost:3001/api/v1/robots/${robotId}/runs`);
+    if (!response.ok) throw new Error('Could not load run history.');
     const data = await response.json();
     setRuns(data);
   };
 
   useEffect(() => {
-    void fetchRobots();
+    void fetchRobots().catch((loadError: Error) => setError(loadError.message));
   }, []);
+
+  useEffect(() => {
+    if (!selectedRobotId) return;
+
+    void fetchRuns(selectedRobotId).catch((loadError: Error) => setError(loadError.message));
+    const interval = window.setInterval(() => {
+      void fetchRuns(selectedRobotId).catch((loadError: Error) => setError(loadError.message));
+    }, 2000);
+
+    return () => window.clearInterval(interval);
+  }, [selectedRobotId]);
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
+    setError(undefined);
 
-    const response = await fetch('http://localhost:3001/api/v1/robots', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
-    });
+    try {
+      const response = await fetch('http://localhost:3001/api/v1/robots', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      if (!response.ok) throw new Error('Could not create robot.');
 
-    const created = await response.json();
-    await fetchRobots();
-    await fetchRuns(created.id);
-    setLoading(false);
+      const created = await response.json();
+      setSelectedRobotId(created.id);
+      await fetchRobots();
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : 'Unexpected error.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const onRunRobot = async (robotId: string, url: string) => {
-    await fetch(`http://localhost:3001/api/v1/robots/${robotId}/runs`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url }),
-    });
+    setSelectedRobotId(robotId);
+    setError(undefined);
 
-    await fetchRuns(robotId);
+    try {
+      const response = await fetch(`http://localhost:3001/api/v1/robots/${robotId}/runs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+      if (!response.ok) throw new Error('Could not start robot.');
+      await fetchRuns(robotId);
+    } catch (runError) {
+      setError(runError instanceof Error ? runError.message : 'Unexpected error.');
+    }
   };
 
   return (
@@ -81,6 +111,8 @@ export default function HomePage() {
           <h1>Turn websites into structured data.</h1>
         </div>
       </header>
+
+      {error ? <p className="error-message" role="alert">{error}</p> : null}
 
       <section className="grid two-column">
         <form className="card" onSubmit={onSubmit}>
@@ -129,9 +161,14 @@ export default function HomePage() {
                     <strong>{robot.name}</strong>
                     <span>{robot.type}</span>
                   </div>
-                  <button type="button" onClick={() => onRunRobot(robot.id, robot.startUrl)}>
-                    Run
-                  </button>
+                  <div className="robot-actions">
+                    <button type="button" className={selectedRobotId === robot.id ? 'selected' : ''} onClick={() => setSelectedRobotId(robot.id)}>
+                      View
+                    </button>
+                    <button type="button" onClick={() => onRunRobot(robot.id, robot.startUrl)}>
+                      Run
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
