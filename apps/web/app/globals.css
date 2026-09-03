@@ -135,6 +135,17 @@ button.selected { background: var(--coral); }
   padding: 0.85rem 0.95rem;
 }
 
+.run-item {
+  align-items: flex-start;
+}
+
+.run-item p {
+  max-width: 62ch;
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
 .robot-list li div,
 .run-list li div {
   display: grid;
