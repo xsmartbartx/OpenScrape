@@ -105,6 +105,15 @@ button {
 
 button:hover { opacity: 0.96; }
 button:disabled { opacity: 0.7; cursor: wait; }
+button.selected { background: var(--coral); }
+
+.error-message {
+  margin: 0 0 1.5rem;
+  border-left: 4px solid var(--coral);
+  padding: 0.8rem 1rem;
+  background: #fff1ef;
+  color: #9f2d24;
+}
 
 .robot-list,
 .run-list {
@@ -130,6 +139,11 @@ button:disabled { opacity: 0.7; cursor: wait; }
 .run-list li div {
   display: grid;
   gap: 0.2rem;
+}
+
+.robot-actions {
+  display: flex;
+  gap: 0.5rem;
 }
 
 .robot-list span,
