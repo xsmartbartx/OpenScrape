@@ -19,11 +19,11 @@ const queue = new Queue('scrape', {
     {
       provide: 'QUEUE_CLIENT',
       useFactory: () => ({
-        addJob: async (url: string, robotId: string) => {
+        addJob: async (url: string, robotId: string, jobId?: string) => {
           const job = await queue.add(
             'scrape',
             { url, robotId },
-            { removeOnComplete: true, removeOnFail: true },
+            { jobId, removeOnComplete: true, removeOnFail: true },
           );
 
           return { id: job.id ?? `job-${Date.now()}` };
