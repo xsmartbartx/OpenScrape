@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Header, Inject, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Header, Inject, NotFoundException, Param, Post } from '@nestjs/common';
 import type { CreateRobotInput, CreateRunInput, Robot, RunStatus } from '@openscrape/contracts';
 import { PrismaService } from './prisma.service';
 
@@ -121,6 +121,21 @@ export class RobotsController {
     const rows = runs.map((run) => headers.map((header) => this.escapeCsv(String(run[header as keyof RunStatus] ?? ''))).join(','));
 
     return [headers.join(','), ...rows].join('\n');
+  }
+
+  @Get(':id/runs/:runId/html')
+  @Header('Content-Type', 'text/html; charset=utf-8')
+  async getRunHtml(@Param('id') robotId: string, @Param('runId') runId: string): Promise<string> {
+    const run = await this.prisma.run.findFirst({
+      where: { id: runId, robotId },
+      select: { html: true },
+    });
+
+    if (!run?.html) {
+      throw new NotFoundException('HTML artifact is not available for this run.');
+    }
+
+    return run.html;
   }
 
   private escapeCsv(value: string): string {

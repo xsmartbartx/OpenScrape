@@ -55,6 +55,7 @@ const worker = new Worker(
             title: result.title,
             snippet: result.snippet,
           }),
+          html,
         },
       }).catch(() => undefined);
     }
