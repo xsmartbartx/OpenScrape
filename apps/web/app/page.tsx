@@ -19,6 +19,21 @@ type RunStatus = {
   result?: string;
 };
 
+type ScrapeResult = {
+  title?: string;
+  snippet?: string;
+};
+
+function parseResult(result?: string): ScrapeResult | undefined {
+  if (!result) return undefined;
+
+  try {
+    return JSON.parse(result) as ScrapeResult;
+  } catch {
+    return undefined;
+  }
+}
+
 const defaultForm = {
   name: 'Example product list',
   type: 'scrape' as const,
@@ -183,10 +198,12 @@ export default function HomePage() {
         ) : (
           <ul className="run-list">
             {runs.map((run) => (
-              <li key={run.id}>
+              <li key={run.id} className="run-item">
                 <div>
                   <strong>{run.robotId}</strong>
                   <span>{run.url}</span>
+                  {parseResult(run.result)?.title ? <b>{parseResult(run.result)?.title}</b> : null}
+                  {parseResult(run.result)?.snippet ? <p>{parseResult(run.result)?.snippet}</p> : null}
                 </div>
                 <div className="meta">
                   <span>{run.status}</span>
