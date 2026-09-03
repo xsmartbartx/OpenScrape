@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Header, Inject, Param, Post } from '@nestjs/common';
 import type { CreateRobotInput, CreateRunInput, Robot, RunStatus } from '@openscrape/contracts';
 import { PrismaService } from './prisma.service';
 
@@ -76,7 +76,7 @@ export class RobotsController {
       },
     });
 
-    const queuedJob = await this.queueClient.addJob(body.url, robotId, run.id);
+    await this.queueClient.addJob(body.url, robotId, run.id);
 
     return {
       id: run.id,
@@ -104,6 +104,27 @@ export class RobotsController {
       finishedAt: run.finishedAt ? this.toIsoString(run.finishedAt) : undefined,
       result: run.result ?? undefined,
     }));
+  }
+
+  @Get(':id/runs/export.json')
+  @Header('Content-Disposition', 'attachment; filename="openscrape-runs.json"')
+  async exportJson(@Param('id') robotId: string): Promise<RunStatus[]> {
+    return this.getRuns(robotId);
+  }
+
+  @Get(':id/runs/export.csv')
+  @Header('Content-Type', 'text/csv; charset=utf-8')
+  @Header('Content-Disposition', 'attachment; filename="openscrape-runs.csv"')
+  async exportCsv(@Param('id') robotId: string): Promise<string> {
+    const runs = await this.getRuns(robotId);
+    const headers = ['id', 'robotId', 'url', 'status', 'startedAt', 'finishedAt', 'result'];
+    const rows = runs.map((run) => headers.map((header) => this.escapeCsv(String(run[header as keyof RunStatus] ?? ''))).join(','));
+
+    return [headers.join(','), ...rows].join('\n');
+  }
+
+  private escapeCsv(value: string): string {
+    return `"${value.replace(/"/g, '""')}"`;
   }
 
   private toIsoString(value: Date | string): string {
