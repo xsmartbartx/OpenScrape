@@ -16,6 +16,10 @@ const connection = new IORedis(process.env.REDIS_URL ?? 'redis://localhost:6379'
   maxRetriesPerRequest: null,
 });
 
+const requestTimeoutMs = 30000;
+const maxRedirects = 5;
+const maxResponseBytes = 5 * 1024 * 1024;
+
 const worker = new Worker(
   'scrape',
   async (job) => {
@@ -35,14 +39,21 @@ const worker = new Worker(
       }).catch(() => undefined);
     }
 
-    const response = await fetch(url, { redirect: 'follow' });
-    const html = await response.text();
+    const { html, finalUrl } = await fetchPage(url);
     let screenshot: Uint8Array<ArrayBuffer> | undefined;
 
     try {
       const browser = await chromium.launch({ headless: true });
       const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+      await page.route('**/*', async (route) => {
+        const requestUrl = route.request().url();
+        if (validateTargetUrl(requestUrl)) {
+          await route.abort('blockedbyclient');
+          return;
+        }
+        await route.continue();
+      });
+      await page.goto(finalUrl, { waitUntil: 'domcontentloaded', timeout: requestTimeoutMs });
       const screenshotBuffer = await page.screenshot({ fullPage: true, type: 'png' });
       screenshot = Uint8Array.from(screenshotBuffer);
       await browser.close();
@@ -51,7 +62,7 @@ const worker = new Worker(
     }
     const result = {
       status: 'completed',
-      url,
+      url: finalUrl,
       robotId,
       title: html.match(/<title[^>]*>(.*?)<\/title>/is)?.[1]?.trim() ?? 'No title',
       snippet: html
@@ -103,3 +114,39 @@ worker.on('failed', async (job, error) => {
 });
 
 console.log('OpenScrape worker listening on scrape queue');
+
+async function fetchPage(initialUrl: string): Promise<{ html: string; finalUrl: string }> {
+  let currentUrl = initialUrl;
+
+  for (let redirect = 0; redirect <= maxRedirects; redirect += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), requestTimeoutMs);
+    let response: Response;
+
+    try {
+      response = await fetch(currentUrl, { redirect: 'manual', signal: controller.signal });
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    if (response.status >= 300 && response.status < 400) {
+      const location = response.headers.get('location');
+      if (!location) throw new Error('Redirect response did not include a location.');
+      const nextUrl = new URL(location, currentUrl).toString();
+      const urlError = validateTargetUrl(nextUrl);
+      if (urlError) throw new Error(`Redirect blocked: ${urlError}`);
+      currentUrl = nextUrl;
+      continue;
+    }
+
+    if (!response.ok) throw new Error(`Target returned HTTP ${response.status}.`);
+    const contentLength = Number(response.headers.get('content-length') ?? 0);
+    if (contentLength > maxResponseBytes) throw new Error('Target response exceeds the 5 MB limit.');
+
+    const body = await response.arrayBuffer();
+    if (body.byteLength > maxResponseBytes) throw new Error('Target response exceeds the 5 MB limit.');
+    return { html: new TextDecoder().decode(body), finalUrl: currentUrl };
+  }
+
+  throw new Error(`Target exceeded the ${maxRedirects} redirect limit.`);
+}
