@@ -3,6 +3,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { Queue } from 'bullmq';
 import { AppController } from './app.controller';
+import { ApiKeyGuard } from './api-key.guard';
 import { HealthController } from './health.controller';
 import { PrismaService } from './prisma.service';
 import { RobotsController } from './robots.controller';
@@ -26,6 +27,10 @@ const apiRateLimit = Number(process.env.API_RATE_LIMIT ?? 60);
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ApiKeyGuard,
     },
     {
       provide: 'QUEUE_CLIENT',
