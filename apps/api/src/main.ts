@@ -6,7 +6,8 @@ async function bootstrap() {
   app.setGlobalPrefix('api/v1');
   const allowedOrigin = process.env.APP_URL ?? 'http://localhost:3000';
   app.enableCors({
-    origin: (origin, callback) => callback(null, !origin || origin === allowedOrigin),
+    origin: (origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) =>
+      callback(null, !origin || origin === allowedOrigin),
     credentials: true,
   });
   await app.listen(process.env.PORT ?? 3001);
