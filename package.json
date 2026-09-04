@@ -9,6 +9,8 @@
   },
   "scripts": {
     "dev": "pnpm --parallel --filter './apps/*' dev",
+    "start:api": "pnpm --filter @openscrape/api start",
+    "start:worker": "pnpm --filter @openscrape/worker start",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
