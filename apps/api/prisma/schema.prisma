@@ -26,5 +26,6 @@ model Run {
   finishedAt DateTime?
   result    String?
   html      String?   @db.Text
+  screenshot Bytes?
   robot     Robot     @relation(fields: [robotId], references: [id])
 }
