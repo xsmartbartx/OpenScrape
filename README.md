@@ -390,6 +390,8 @@ cloud deployment is called production-ready.
 - Hash API keys; display the secret only once.
 - Redact cookies, authorization headers, tokens, and sensitive form values.
 - Isolate browser contexts per job and cap concurrent browsers.
+- Restrict CORS to `APP_URL` and apply a configurable API rate limit with
+  `API_RATE_LIMIT`.
 - Provide audit events and deletion controls for user data and artifacts.
 
 ## 17. Development Plan / Roadmap
