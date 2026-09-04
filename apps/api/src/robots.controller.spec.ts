@@ -17,6 +17,20 @@ describe('RobotsController', () => {
     });
   });
 
+  it('rejects a run when the robot quota is exhausted', async () => {
+    const addJob = jest.fn();
+    const repo = {
+      run: { count: jest.fn().mockResolvedValue(100) },
+      robot: { findUnique: jest.fn().mockResolvedValue({ id: 'robot-1', runLimit: 100 }) },
+    };
+    const controller = new RobotsController({ addJob } as any, repo as any);
+
+    await expect(controller.createRun('robot-1', { url: 'https://example.com' })).rejects.toThrow(
+      'Robot run limit reached for the current plan.',
+    );
+    expect(addJob).not.toHaveBeenCalled();
+  });
+
   it('rejects private network targets before queueing', async () => {
     const addJob = jest.fn();
     const controller = new RobotsController({ addJob } as any, {} as any);
@@ -41,8 +55,11 @@ describe('RobotsController', () => {
       run: { create: runCreate },
       robot: {
         findMany: jest.fn().mockResolvedValue([]),
-        findUnique: jest.fn().mockResolvedValue(null),
-        create: jest.fn().mockResolvedValue({ id: 'robot-1', name: 'Robot robot-1' }),
+        findUnique: jest.fn()
+          .mockResolvedValueOnce(null)
+          .mockResolvedValueOnce({ id: 'robot-1', runLimit: 100 }),
+        create: jest.fn().mockResolvedValue({ id: 'robot-1', name: 'Robot robot-1', runLimit: 100 }),
+        count: jest.fn().mockResolvedValue(0),
       },
     };
 

@@ -14,6 +14,7 @@ model Robot {
   startUrl  String
   status    String
   createdAt DateTime @default(now())
+  runLimit  Int      @default(100)
   runs      Run[]
 }
 
