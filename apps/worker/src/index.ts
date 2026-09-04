@@ -1,8 +1,8 @@
 import { PrismaClient } from '@prisma/client';
-import { validateTargetUrl } from '@openscrape/contracts';
 import { Worker } from 'bullmq';
 import IORedis from 'ioredis';
 import { chromium } from 'playwright';
+import { validateTargetUrl } from './url-validation';
 
 const prisma = new PrismaClient({
   datasources: {

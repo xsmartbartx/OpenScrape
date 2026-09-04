@@ -1,8 +1,8 @@
 import { BadRequestException, Body, Controller, Get, Header, Inject, NotFoundException, Param, Post, Res } from '@nestjs/common';
 import type { Response } from 'express';
-import { validateTargetUrl } from '@openscrape/contracts';
 import type { CreateRobotInput, CreateRunInput, Robot, RunStatus } from '@openscrape/contracts';
 import { PrismaService } from './prisma.service';
+import { validateTargetUrl } from './url-validation';
 
 export type QueueClient = {
   addJob: (url: string, robotId: string, jobId?: string) => Promise<{ id: string }>;

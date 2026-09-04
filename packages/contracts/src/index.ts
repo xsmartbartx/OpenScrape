@@ -35,4 +35,3 @@ export interface HealthResponse {
   timestamp: string;
 }
 
-export { validateTargetUrl } from './url';
