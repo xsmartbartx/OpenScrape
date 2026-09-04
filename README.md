@@ -427,6 +427,7 @@ cloud deployment is called production-ready.
 ### Phase 3 — Production product
 
 - [ ] Organizations, roles, API keys, audit log, and billing limits.
+- [x] Enforce a configurable free-plan run quota per billing period.
 - [ ] AI extraction with usage/cost controls.
 - [ ] Schedules, retries, cancellation, and live logs.
 - [ ] Exports, SDK, CLI, observability, backups, and deployment guides.
