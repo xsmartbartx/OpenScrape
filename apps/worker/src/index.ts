@@ -125,25 +125,44 @@ async function fetchPage(initialUrl: string): Promise<{ html: string; finalUrl: 
 
     try {
       response = await fetch(currentUrl, { redirect: 'manual', signal: controller.signal });
-    } finally {
+    } catch (error) {
       clearTimeout(timeout);
+      throw error;
     }
 
     if (response.status >= 300 && response.status < 400) {
       const location = response.headers.get('location');
-      if (!location) throw new Error('Redirect response did not include a location.');
+      if (!location) {
+        clearTimeout(timeout);
+        throw new Error('Redirect response did not include a location.');
+      }
       const nextUrl = new URL(location, currentUrl).toString();
       const urlError = validateTargetUrl(nextUrl);
-      if (urlError) throw new Error(`Redirect blocked: ${urlError}`);
+      if (urlError) {
+        clearTimeout(timeout);
+        throw new Error(`Redirect blocked: ${urlError}`);
+      }
+      clearTimeout(timeout);
       currentUrl = nextUrl;
       continue;
     }
 
-    if (!response.ok) throw new Error(`Target returned HTTP ${response.status}.`);
+    if (!response.ok) {
+      clearTimeout(timeout);
+      throw new Error(`Target returned HTTP ${response.status}.`);
+    }
     const contentLength = Number(response.headers.get('content-length') ?? 0);
-    if (contentLength > maxResponseBytes) throw new Error('Target response exceeds the 5 MB limit.');
+    if (contentLength > maxResponseBytes) {
+      clearTimeout(timeout);
+      throw new Error('Target response exceeds the 5 MB limit.');
+    }
 
-    const body = await response.arrayBuffer();
+    let body: ArrayBuffer;
+    try {
+      body = await response.arrayBuffer();
+    } finally {
+      clearTimeout(timeout);
+    }
     if (body.byteLength > maxResponseBytes) throw new Error('Target response exceeds the 5 MB limit.');
     return { html: new TextDecoder().decode(body), finalUrl: currentUrl };
   }

@@ -383,6 +383,8 @@ cloud deployment is called production-ready.
 
 - Enforce SSRF protection: only `http` and `https`, block private/link-local IPs,
   re-check redirects, and apply DNS/IP safeguards.
+- Enforce a 30-second request timeout, a five-redirect limit, and a 5 MB response
+  limit in the worker.
 - Respect `robots.txt`, per-domain rate limits, request timeouts, and page limits.
 - Encrypt credentials and integration configuration at rest.
 - Hash API keys; display the secret only once.
