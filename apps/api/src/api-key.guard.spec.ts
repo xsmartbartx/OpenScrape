@@ -22,7 +22,7 @@ describe('ApiKeyGuard', () => {
     expect(new ApiKeyGuard({} as any).canActivate(contextFor('/api/v1/health'))).resolves.toBe(true);
   });
 
-  it('rejects missing keys and accepts the configured key', () => {
+  it('rejects missing keys and accepts the configured key', async () => {
     process.env.API_KEYS_REQUIRED = 'true';
     process.env.API_KEY_HASH = createHash('sha256').update('secret').digest('hex');
     const prisma = { apiKey: { findFirst: jest.fn().mockResolvedValue(null) } };
