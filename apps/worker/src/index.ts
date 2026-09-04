@@ -93,7 +93,7 @@ const worker = new Worker(
 
     return result;
   },
-  { connection },
+  { connection, concurrency: 2, lockDuration: 120000 },
 );
 
 worker.on('completed', (job, result) => console.log(`Completed job ${job.id ?? 'unknown'} with result:`, result));

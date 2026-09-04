@@ -1,6 +1,22 @@
 import { RobotsController } from './robots.controller';
 
 describe('RobotsController', () => {
+  it('marks a run failed when Redis rejects the job', async () => {
+    const addJob = jest.fn().mockRejectedValue(new Error('Redis unavailable'));
+    const runUpdate = jest.fn().mockResolvedValue(undefined);
+    const repo = {
+      run: { create: jest.fn().mockResolvedValue({ id: 'run-123', robotId: 'robot-1', url: 'https://example.com', status: 'queued', startedAt: new Date(), result: 'Job accepted and queued for processing.' }), update: runUpdate },
+      robot: { findUnique: jest.fn().mockResolvedValue({ id: 'robot-1' }), create: jest.fn() },
+    };
+    const controller = new RobotsController({ addJob } as any, repo as any);
+
+    await expect(controller.createRun('robot-1', { url: 'https://example.com' })).rejects.toThrow('Redis unavailable');
+    expect(runUpdate).toHaveBeenCalledWith({
+      where: { id: 'run-123' },
+      data: expect.objectContaining({ status: 'failed', result: 'Redis unavailable' }),
+    });
+  });
+
   it('rejects private network targets before queueing', async () => {
     const addJob = jest.fn();
     const controller = new RobotsController({ addJob } as any, {} as any);

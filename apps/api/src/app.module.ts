@@ -34,7 +34,13 @@ const apiRateLimit = Number(process.env.API_RATE_LIMIT ?? 60);
           const job = await queue.add(
             'scrape',
             { url, robotId },
-            { jobId, removeOnComplete: true, removeOnFail: true },
+            {
+              jobId,
+              attempts: 3,
+              backoff: { type: 'exponential', delay: 1000 },
+              removeOnComplete: 100,
+              removeOnFail: 100,
+            },
           );
 
           return { id: job.id ?? `job-${Date.now()}` };

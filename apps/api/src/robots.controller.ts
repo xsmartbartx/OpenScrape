@@ -80,7 +80,19 @@ export class RobotsController {
       },
     });
 
-    await this.queueClient.addJob(body.url, robotId, run.id);
+    try {
+      await this.queueClient.addJob(body.url, robotId, run.id);
+    } catch (error) {
+      await this.prisma.run.update({
+        where: { id: run.id },
+        data: {
+          status: 'failed',
+          finishedAt: new Date(),
+          result: error instanceof Error ? error.message : 'Queue rejected the job.',
+        },
+      });
+      throw error;
+    }
 
     return {
       id: run.id,
