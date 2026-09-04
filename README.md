@@ -357,6 +357,24 @@ coupling the dashboard to worker internals.
 
 Local development will be a single `docker compose up` for PostgreSQL, Redis,
 and MinIO, with API, worker, and web running in the workspace during development.
+After installing dependencies, download the Chromium runtime used for screenshots:
+
+```bash
+npx pnpm install
+npx pnpm --dir apps/worker exec playwright install chromium
+```
+
+Build before using the production entrypoints:
+
+```bash
+npx pnpm --dir apps/api build
+npx pnpm --dir apps/worker build
+npx pnpm --dir apps/api start
+npx pnpm --dir apps/worker start
+```
+
+Use `npx pnpm` when pnpm is not installed globally. Do not run `npx tsc`,
+because that can resolve an unrelated npm package named `tsc`.
 Production packaging will add container images, health checks, secret injection,
 database migrations, backups, structured logs, and resource limits before any
 cloud deployment is called production-ready.
