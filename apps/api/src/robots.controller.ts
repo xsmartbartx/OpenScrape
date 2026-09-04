@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Header, Inject, NotFoundException, Param, Post, Res, TooManyRequestsException } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Header, HttpException, HttpStatus, Inject, NotFoundException, Param, Post, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import type { CreateRobotInput, CreateRunInput, Robot, RunStatus } from '@openscrape/contracts';
 import { PrismaService } from './prisma.service';
@@ -71,7 +71,7 @@ export class RobotsController {
     if (!robot) throw new NotFoundException('Robot not found.');
     const runCount = await this.prisma.run.count({ where: { robotId } });
     if (runCount >= robot.runLimit) {
-      throw new TooManyRequestsException('Robot run limit reached for the current plan.');
+      throw new HttpException('Robot run limit reached for the current plan.', HttpStatus.TOO_MANY_REQUESTS);
     }
 
     const runId = `run-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
