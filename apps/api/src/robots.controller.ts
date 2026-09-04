@@ -1,5 +1,6 @@
-import { Body, Controller, Get, Header, Inject, NotFoundException, Param, Post, Res } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Header, Inject, NotFoundException, Param, Post, Res } from '@nestjs/common';
 import type { Response } from 'express';
+import { validateTargetUrl } from '@openscrape/contracts';
 import type { CreateRobotInput, CreateRunInput, Robot, RunStatus } from '@openscrape/contracts';
 import { PrismaService } from './prisma.service';
 
@@ -29,6 +30,7 @@ export class RobotsController {
 
   @Post()
   async createRobot(@Body() body: CreateRobotInput): Promise<Robot> {
+    this.assertSafeUrl(body.startUrl);
     const robot = await this.prisma.robot.create({
       data: {
         id: `robot-${Date.now()}`,
@@ -50,6 +52,7 @@ export class RobotsController {
 
   @Post(':id/runs')
   async createRun(@Param('id') robotId: string, @Body() body: Pick<CreateRunInput, 'url'>): Promise<RunStatus> {
+    this.assertSafeUrl(body.url);
     const existingRobot = await this.prisma.robot.findUnique({ where: { id: robotId } });
 
     if (!existingRobot) {
@@ -159,6 +162,13 @@ export class RobotsController {
 
   private escapeCsv(value: string): string {
     return `"${value.replace(/"/g, '""')}"`;
+  }
+
+  private assertSafeUrl(value: string): void {
+    const error = validateTargetUrl(value);
+    if (error) {
+      throw new BadRequestException(error);
+    }
   }
 
   private toIsoString(value: Date | string): string {

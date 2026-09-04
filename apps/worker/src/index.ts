@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { validateTargetUrl } from '@openscrape/contracts';
 import { Worker } from 'bullmq';
 import IORedis from 'ioredis';
 import { chromium } from 'playwright';
@@ -21,6 +22,11 @@ const worker = new Worker(
     const { url, robotId } = job.data as { url: string; robotId?: string };
     const jobId = String(job.id ?? 'unknown');
     console.log(`Received scrape job ${jobId} for ${url}`);
+
+    const urlError = validateTargetUrl(url);
+    if (urlError) {
+      throw new Error(urlError);
+    }
 
     if (jobId !== 'unknown') {
       await prisma.run.update({

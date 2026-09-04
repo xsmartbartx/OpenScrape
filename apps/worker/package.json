@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@openscrape/contracts": "workspace:*",
     "@prisma/client": "^6.19.3",
     "bullmq": "^5.56.1",
     "ioredis": "^5.7.0",

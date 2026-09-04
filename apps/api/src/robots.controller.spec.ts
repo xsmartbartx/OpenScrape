@@ -1,6 +1,16 @@
 import { RobotsController } from './robots.controller';
 
 describe('RobotsController', () => {
+  it('rejects private network targets before queueing', async () => {
+    const addJob = jest.fn();
+    const controller = new RobotsController({ addJob } as any, {} as any);
+
+    await expect(controller.createRun('robot-1', { url: 'http://127.0.0.1:8080/admin' })).rejects.toThrow(
+      'Private and local network targets are not allowed.',
+    );
+    expect(addJob).not.toHaveBeenCalled();
+  });
+
   it('should queue a scrape job and persist a run record', async () => {
     const addJob = jest.fn().mockResolvedValue({ id: 'job-123' });
     const runCreate = jest.fn().mockResolvedValue({
