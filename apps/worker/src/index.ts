@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { Worker } from 'bullmq';
 import IORedis from 'ioredis';
+import { chromium } from 'playwright';
 
 const prisma = new PrismaClient({
   datasources: {
@@ -30,6 +31,18 @@ const worker = new Worker(
 
     const response = await fetch(url, { redirect: 'follow' });
     const html = await response.text();
+    let screenshot: Uint8Array<ArrayBuffer> | undefined;
+
+    try {
+      const browser = await chromium.launch({ headless: true });
+      const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+      const screenshotBuffer = await page.screenshot({ fullPage: true, type: 'png' });
+      screenshot = Uint8Array.from(screenshotBuffer);
+      await browser.close();
+    } catch (error) {
+      console.warn(`Could not capture screenshot for ${jobId}:`, error);
+    }
     const result = {
       status: 'completed',
       url,
@@ -56,6 +69,7 @@ const worker = new Worker(
             snippet: result.snippet,
           }),
           html,
+          screenshot,
         },
       }).catch(() => undefined);
     }

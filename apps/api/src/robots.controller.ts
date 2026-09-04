@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Header, Inject, NotFoundException, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Header, Inject, NotFoundException, Param, Post, Res } from '@nestjs/common';
+import type { Response } from 'express';
 import type { CreateRobotInput, CreateRunInput, Robot, RunStatus } from '@openscrape/contracts';
 import { PrismaService } from './prisma.service';
 
@@ -136,6 +137,24 @@ export class RobotsController {
     }
 
     return run.html;
+  }
+
+  @Get(':id/runs/:runId/screenshot')
+  async getRunScreenshot(
+    @Param('id') robotId: string,
+    @Param('runId') runId: string,
+    @Res() response: Response,
+  ): Promise<void> {
+    const run = await this.prisma.run.findFirst({
+      where: { id: runId, robotId },
+      select: { screenshot: true },
+    });
+
+    if (!run?.screenshot) {
+      throw new NotFoundException('Screenshot artifact is not available for this run.');
+    }
+
+    response.type('png').send(run.screenshot);
   }
 
   private escapeCsv(value: string): string {

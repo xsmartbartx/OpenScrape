@@ -217,9 +217,10 @@ export default function HomePage() {
                   <span>{run.status}</span>
                   <small>{new Date(run.startedAt).toLocaleString()}</small>
                   {run.status === 'success' ? (
-                    <a href={`http://localhost:3001/api/v1/robots/${run.robotId}/runs/${run.id}/html`} target="_blank" rel="noreferrer">
-                      HTML
-                    </a>
+                    <>
+                      <a href={`http://localhost:3001/api/v1/robots/${run.robotId}/runs/${run.id}/html`} target="_blank" rel="noreferrer">HTML</a>
+                      <a href={`http://localhost:3001/api/v1/robots/${run.robotId}/runs/${run.id}/screenshot`} target="_blank" rel="noreferrer">PNG</a>
+                    </>
                   ) : null}
                 </div>
               </li>
