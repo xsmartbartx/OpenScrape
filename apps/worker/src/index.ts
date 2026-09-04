@@ -115,6 +115,18 @@ worker.on('failed', async (job, error) => {
 
 console.log('OpenScrape worker listening on scrape queue');
 
+let shuttingDown = false;
+const shutdown = async () => {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  await worker.close();
+  await connection.quit();
+  await prisma.$disconnect();
+};
+
+process.once('SIGTERM', () => void shutdown());
+process.once('SIGINT', () => void shutdown());
+
 async function fetchPage(initialUrl: string): Promise<{ html: string; finalUrl: string }> {
   let currentUrl = initialUrl;
 

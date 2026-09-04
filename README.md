@@ -393,6 +393,8 @@ cloud deployment is called production-ready.
 - Restrict CORS to `APP_URL` and apply a configurable API rate limit with
   `API_RATE_LIMIT`.
 - Provide audit events and deletion controls for user data and artifacts.
+- Drain workers and close database/Redis connections during `SIGTERM` and `SIGINT`
+  so rolling restarts do not interrupt active jobs abruptly.
 
 ## 17. Development Plan / Roadmap
 
