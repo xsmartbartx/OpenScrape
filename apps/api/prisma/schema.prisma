@@ -7,6 +7,49 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id          String        @id
+  email       String        @unique
+  displayName String
+  createdAt   DateTime      @default(now())
+  memberships Membership[]
+  apiKeys     ApiKey[]
+}
+
+model Workspace {
+  id          String        @id
+  name        String
+  plan        String        @default("free")
+  createdAt   DateTime      @default(now())
+  memberships Membership[]
+  apiKeys     ApiKey[]
+  robots      Robot[]
+}
+
+model Membership {
+  userId      String
+  workspaceId String
+  role        String   @default("member")
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@id([userId, workspaceId])
+}
+
+model ApiKey {
+  id          String    @id
+  name        String
+  hash        String    @unique
+  userId      String
+  workspaceId String
+  lastUsedAt  DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
 model Robot {
   id        String   @id
   name      String
@@ -17,7 +60,9 @@ model Robot {
   plan      String   @default("free")
   runLimit  Int      @default(100)
   periodStart DateTime @default(now())
+  workspaceId String?
   runs      Run[]
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
 }
 
 model Run {

@@ -19,16 +19,17 @@ describe('ApiKeyGuard', () => {
 
   it('allows health checks without a key', () => {
     process.env.API_KEYS_REQUIRED = 'true';
-    expect(new ApiKeyGuard().canActivate(contextFor('/api/v1/health'))).toBe(true);
+    expect(new ApiKeyGuard({} as any).canActivate(contextFor('/api/v1/health'))).resolves.toBe(true);
   });
 
   it('rejects missing keys and accepts the configured key', () => {
     process.env.API_KEYS_REQUIRED = 'true';
     process.env.API_KEY_HASH = createHash('sha256').update('secret').digest('hex');
-    const guard = new ApiKeyGuard();
+    const prisma = { apiKey: { findFirst: jest.fn().mockResolvedValue(null) } };
+    const guard = new ApiKeyGuard(prisma as any);
 
-    expect(() => guard.canActivate(contextFor('/api/v1/robots'))).toThrow('API key required.');
-    expect(guard.canActivate(contextFor('/api/v1/robots', 'secret'))).toBe(true);
-    expect(() => guard.canActivate(contextFor('/api/v1/robots', 'wrong'))).toThrow('Invalid API key.');
+    await expect(guard.canActivate(contextFor('/api/v1/robots'))).rejects.toThrow('API key required.');
+    await expect(guard.canActivate(contextFor('/api/v1/robots', 'secret'))).resolves.toBe(true);
+    await expect(guard.canActivate(contextFor('/api/v1/robots', 'wrong'))).rejects.toThrow('Invalid API key.');
   });
 });
