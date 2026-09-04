@@ -69,7 +69,9 @@ export class RobotsController {
 
     const robot = await this.prisma.robot.findUnique({ where: { id: robotId } });
     if (!robot) throw new NotFoundException('Robot not found.');
-    const runCount = await this.prisma.run.count({ where: { robotId } });
+    const runCount = await this.prisma.run.count({
+      where: { robotId, startedAt: { gte: robot.periodStart } },
+    });
     if (runCount >= robot.runLimit) {
       throw new HttpException('Robot run limit reached for the current plan.', HttpStatus.TOO_MANY_REQUESTS);
     }

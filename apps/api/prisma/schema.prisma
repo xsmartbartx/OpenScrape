@@ -14,7 +14,9 @@ model Robot {
   startUrl  String
   status    String
   createdAt DateTime @default(now())
+  plan      String   @default("free")
   runLimit  Int      @default(100)
+  periodStart DateTime @default(now())
   runs      Run[]
 }
 
