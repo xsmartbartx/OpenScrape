@@ -364,6 +364,11 @@ npx pnpm install
 npx pnpm --dir apps/worker exec playwright install chromium
 ```
 
+The Compose stack is for local development. PostgreSQL, Redis, and MinIO ports
+are published for local tools and the default credentials are development-only;
+do not expose this file directly to the internet or reuse those credentials in
+production.
+
 Build before using the production entrypoints:
 
 ```bash
@@ -383,6 +388,8 @@ cloud deployment is called production-ready.
 
 - Enforce SSRF protection: only `http` and `https`, block private/link-local IPs,
   re-check redirects, and apply DNS/IP safeguards.
+- API responses include Helmet security headers and JSON/form bodies are limited
+  to 1 MB.
 - Enforce a 30-second request timeout, a five-redirect limit, and a 5 MB response
   limit in the worker.
 - Respect `robots.txt`, per-domain rate limits, request timeouts, and page limits.

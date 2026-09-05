@@ -128,6 +128,19 @@ const shutdown = async () => {
 process.once('SIGTERM', () => void shutdown());
 process.once('SIGINT', () => void shutdown());
 
+async function validateResolvedUrl(value: string): Promise<string | undefined> {
+  const syntaxError = validateTargetUrl(value);
+  if (syntaxError) return syntaxError;
+
+  const hostname = new URL(value).hostname;
+  const addresses = await lookup(hostname, { all: true, verbatim: true });
+  for (const address of addresses) {
+    if (validateTargetUrl(`http://${address.address}`)) {
+      return 'Target resolves to a private or local network address.';
+    }
+  }
+}
+
 async function fetchPage(initialUrl: string): Promise<{ html: string; finalUrl: string }> {
   let currentUrl = initialUrl;
 
@@ -142,18 +155,6 @@ async function fetchPage(initialUrl: string): Promise<{ html: string; finalUrl: 
       clearTimeout(timeout);
       throw error;
     }
-async function validateResolvedUrl(value: string): Promise<string | undefined> {
-  const syntaxError = validateTargetUrl(value);
-  if (syntaxError) return syntaxError;
-
-  const hostname = new URL(value).hostname;
-  const addresses = await lookup(hostname, { all: true, verbatim: true });
-  for (const address of addresses) {
-    if (validateTargetUrl(`http://${address.address}`)) {
-      return 'Target resolves to a private or local network address.';
-    }
-  }
-}
 
     if (response.status >= 300 && response.status < 400) {
       const location = response.headers.get('location');
@@ -162,7 +163,7 @@ async function validateResolvedUrl(value: string): Promise<string | undefined> {
         throw new Error('Redirect response did not include a location.');
       }
       const nextUrl = new URL(location, currentUrl).toString();
-      const urlError = validateTargetUrl(nextUrl);
+      const urlError = await validateResolvedUrl(nextUrl);
       if (urlError) {
         clearTimeout(timeout);
         throw new Error(`Redirect blocked: ${urlError}`);
@@ -177,7 +178,7 @@ async function validateResolvedUrl(value: string): Promise<string | undefined> {
       throw new Error(`Target returned HTTP ${response.status}.`);
     }
     const contentLength = Number(response.headers.get('content-length') ?? 0);
-      const urlError = await validateResolvedUrl(nextUrl);
+    if (contentLength > maxResponseBytes) {
       clearTimeout(timeout);
       throw new Error('Target response exceeds the 5 MB limit.');
     }
