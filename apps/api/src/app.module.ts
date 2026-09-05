@@ -8,6 +8,7 @@ import { AuthController } from './auth.controller';
 import { HealthController } from './health.controller';
 import { PrismaService } from './prisma.service';
 import { RobotsController } from './robots.controller';
+import { SessionGuard } from './session.guard';
 
 const queue = new Queue('scrape', {
   connection: {
@@ -32,6 +33,10 @@ const apiRateLimit = Number(process.env.API_RATE_LIMIT ?? 60);
     {
       provide: APP_GUARD,
       useClass: ApiKeyGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: SessionGuard,
     },
     {
       provide: 'QUEUE_CLIENT',

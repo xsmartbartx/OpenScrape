@@ -1,5 +1,6 @@
-import { BadRequestException, Body, Controller, Get, Header, HttpException, HttpStatus, Inject, NotFoundException, Param, Post, Res } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Header, HttpException, HttpStatus, Inject, NotFoundException, Param, Post, Req, Res } from '@nestjs/common';
 import type { Response } from 'express';
+import type { Request } from 'express';
 import type { CreateRobotInput, CreateRunInput, Robot, RunStatus } from '@openscrape/contracts';
 import { PrismaService } from './prisma.service';
 import { validateTargetUrl } from './url-validation';
@@ -16,8 +17,10 @@ export class RobotsController {
   ) {}
 
   @Get()
-  async getRobots(): Promise<Robot[]> {
-    const robots = await this.prisma.robot.findMany();
+  async getRobots(@Req() request: Request): Promise<Robot[]> {
+    const robots = await this.prisma.robot.findMany({
+      where: request.user?.workspaceId ? { workspaceId: request.user.workspaceId } : undefined,
+    });
 
     return robots.map((robot) => ({
       id: robot.id,
@@ -29,7 +32,7 @@ export class RobotsController {
   }
 
   @Post()
-  async createRobot(@Body() body: CreateRobotInput): Promise<Robot> {
+  async createRobot(@Body() body: CreateRobotInput, @Req() request: Request): Promise<Robot> {
     this.assertSafeUrl(body.startUrl);
     const robot = await this.prisma.robot.create({
       data: {
@@ -38,6 +41,7 @@ export class RobotsController {
         type: body.type,
         startUrl: body.startUrl,
         status: 'ready',
+        workspaceId: request.user?.workspaceId,
       },
     });
 
@@ -51,9 +55,11 @@ export class RobotsController {
   }
 
   @Post(':id/runs')
-  async createRun(@Param('id') robotId: string, @Body() body: Pick<CreateRunInput, 'url'>): Promise<RunStatus> {
+  async createRun(@Param('id') robotId: string, @Body() body: Pick<CreateRunInput, 'url'>, @Req() request: Request): Promise<RunStatus> {
     this.assertSafeUrl(body.url);
-    const existingRobot = await this.prisma.robot.findUnique({ where: { id: robotId } });
+    const existingRobot = await this.prisma.robot.findFirst({
+      where: { id: robotId, ...(request.user?.workspaceId ? { workspaceId: request.user.workspaceId } : {}) },
+    });
 
     if (!existingRobot) {
       await this.prisma.robot.create({
@@ -63,11 +69,14 @@ export class RobotsController {
           type: 'scrape',
           startUrl: body.url,
           status: 'ready',
+          workspaceId: request.user?.workspaceId,
         },
       });
     }
 
-    const robot = await this.prisma.robot.findUnique({ where: { id: robotId } });
+    const robot = await this.prisma.robot.findFirst({
+      where: { id: robotId, ...(request.user?.workspaceId ? { workspaceId: request.user.workspaceId } : {}) },
+    });
     if (!robot) throw new NotFoundException('Robot not found.');
     const runCount = await this.prisma.run.count({
       where: { robotId, startedAt: { gte: robot.periodStart } },
@@ -114,9 +123,9 @@ export class RobotsController {
   }
 
   @Get(':id/runs')
-  async getRuns(@Param('id') robotId: string): Promise<RunStatus[]> {
+  async getRuns(@Param('id') robotId: string, @Req() request?: Request): Promise<RunStatus[]> {
     const runs = await this.prisma.run.findMany({
-      where: { robotId },
+      where: { robotId, ...(request?.user?.workspaceId ? { robot: { workspaceId: request.user.workspaceId } } : {}) },
       orderBy: { startedAt: 'desc' },
     });
 
@@ -133,15 +142,15 @@ export class RobotsController {
 
   @Get(':id/runs/export.json')
   @Header('Content-Disposition', 'attachment; filename="openscrape-runs.json"')
-  async exportJson(@Param('id') robotId: string): Promise<RunStatus[]> {
-    return this.getRuns(robotId);
+  async exportJson(@Param('id') robotId: string, @Req() request: Request): Promise<RunStatus[]> {
+    return this.getRuns(robotId, request);
   }
 
   @Get(':id/runs/export.csv')
   @Header('Content-Type', 'text/csv; charset=utf-8')
   @Header('Content-Disposition', 'attachment; filename="openscrape-runs.csv"')
-  async exportCsv(@Param('id') robotId: string): Promise<string> {
-    const runs = await this.getRuns(robotId);
+  async exportCsv(@Param('id') robotId: string, @Req() request: Request): Promise<string> {
+    const runs = await this.getRuns(robotId, request);
     const headers = ['id', 'robotId', 'url', 'status', 'startedAt', 'finishedAt', 'result'];
     const rows = runs.map((run) => headers.map((header) => this.escapeCsv(String(run[header as keyof RunStatus] ?? ''))).join(','));
 
@@ -150,9 +159,9 @@ export class RobotsController {
 
   @Get(':id/runs/:runId/html')
   @Header('Content-Type', 'text/html; charset=utf-8')
-  async getRunHtml(@Param('id') robotId: string, @Param('runId') runId: string): Promise<string> {
+  async getRunHtml(@Param('id') robotId: string, @Param('runId') runId: string, @Req() request: Request): Promise<string> {
     const run = await this.prisma.run.findFirst({
-      where: { id: runId, robotId },
+      where: { id: runId, robotId, ...(request.user?.workspaceId ? { robot: { workspaceId: request.user.workspaceId } } : {}) },
       select: { html: true },
     });
 
@@ -167,10 +176,11 @@ export class RobotsController {
   async getRunScreenshot(
     @Param('id') robotId: string,
     @Param('runId') runId: string,
+    @Req() request: Request,
     @Res() response: Response,
   ): Promise<void> {
     const run = await this.prisma.run.findFirst({
-      where: { id: runId, robotId },
+      where: { id: runId, robotId, ...(request.user?.workspaceId ? { robot: { workspaceId: request.user.workspaceId } } : {}) },
       select: { screenshot: true },
     });
 

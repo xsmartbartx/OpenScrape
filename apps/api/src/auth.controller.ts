@@ -1,7 +1,8 @@
-import { ConflictException, Controller, Post, Body, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Controller, Post, Body, Get, Req, UnauthorizedException } from '@nestjs/common';
 import { createHash, randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import { PrismaService } from './prisma.service';
+import type { Request } from 'express';
 
 const scrypt = promisify(scryptCallback);
 const sessionLifetimeMs = 1000 * 60 * 60 * 24 * 30;
@@ -62,6 +63,26 @@ export class AuthController {
     return this.createSession(user.id, membership.workspaceId, user.email, user.displayName);
   }
 
+  @Get('me')
+  async me(@Req() request: Request) {
+    const token = this.bearerToken(request);
+    const session = await this.prisma.session.findFirst({
+      where: { tokenHash: this.hashToken(token), expiresAt: { gt: new Date() } },
+      include: { user: true },
+    });
+    if (!session) throw new UnauthorizedException('Invalid or expired session.');
+    const membership = await this.prisma.membership.findFirst({ where: { userId: session.userId }, orderBy: { createdAt: 'asc' } });
+    if (!membership) throw new UnauthorizedException('Account has no workspace membership.');
+    return { user: { id: session.user.id, email: session.user.email, displayName: session.user.displayName, workspaceId: membership.workspaceId } };
+  }
+
+  @Post('logout')
+  async logout(@Req() request: Request) {
+    const token = this.bearerToken(request);
+    await this.prisma.session.deleteMany({ where: { tokenHash: this.hashToken(token) } });
+    return { success: true };
+  }
+
   private async createSession(userId: string, workspaceId: string, email: string, displayName: string) {
     const token = randomBytes(32).toString('base64url');
     await this.prisma.session.create({
@@ -103,5 +124,12 @@ export class AuthController {
 
   private hashToken(token: string): string {
     return createHash('sha256').update(token).digest('hex');
+  }
+
+  private bearerToken(request: Request): string {
+    const authorization = request.header('authorization');
+    const token = authorization?.startsWith('Bearer ') ? authorization.slice(7) : undefined;
+    if (!token) throw new UnauthorizedException('Session token required.');
+    return token;
   }
 }

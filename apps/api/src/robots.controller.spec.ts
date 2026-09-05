@@ -6,7 +6,7 @@ describe('RobotsController', () => {
     const runUpdate = jest.fn().mockResolvedValue(undefined);
     const repo = {
       run: { count: jest.fn().mockResolvedValue(0), create: jest.fn().mockResolvedValue({ id: 'run-123', robotId: 'robot-1', url: 'https://example.com', status: 'queued', startedAt: new Date(), result: 'Job accepted and queued for processing.' }), update: runUpdate },
-      robot: { findUnique: jest.fn().mockResolvedValue({ id: 'robot-1' }), create: jest.fn() },
+      robot: { findFirst: jest.fn().mockResolvedValue({ id: 'robot-1', runLimit: 100, periodStart: new Date() }), create: jest.fn() },
     };
     const controller = new RobotsController({ addJob } as any, repo as any);
 
@@ -21,7 +21,7 @@ describe('RobotsController', () => {
     const addJob = jest.fn();
     const repo = {
       run: { count: jest.fn().mockResolvedValue(100) },
-      robot: { findUnique: jest.fn().mockResolvedValue({ id: 'robot-1', runLimit: 100, periodStart: new Date() }) },
+      robot: { findFirst: jest.fn().mockResolvedValue({ id: 'robot-1', runLimit: 100, periodStart: new Date() }) },
     };
     const controller = new RobotsController({ addJob } as any, repo as any);
 
@@ -55,7 +55,7 @@ describe('RobotsController', () => {
       run: { count: jest.fn().mockResolvedValue(0), create: runCreate },
       robot: {
         findMany: jest.fn().mockResolvedValue([]),
-        findUnique: jest.fn()
+        findFirst: jest.fn()
           .mockResolvedValueOnce(null)
           .mockResolvedValueOnce({ id: 'robot-1', runLimit: 100, periodStart: new Date() }),
         create: jest.fn().mockResolvedValue({ id: 'robot-1', name: 'Robot robot-1', runLimit: 100 }),
