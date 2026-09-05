@@ -11,9 +11,20 @@ model User {
   id          String        @id
   email       String        @unique
   displayName String
+  passwordHash String
   createdAt   DateTime      @default(now())
   memberships Membership[]
   apiKeys     ApiKey[]
+  sessions    Session[]
+}
+
+model Session {
+  id        String   @id
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Workspace {
