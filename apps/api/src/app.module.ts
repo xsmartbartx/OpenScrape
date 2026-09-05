@@ -10,10 +10,14 @@ import { PrismaService } from './prisma.service';
 import { RobotsController } from './robots.controller';
 import { SessionGuard } from './session.guard';
 
+const redisUrl = new URL(process.env.REDIS_URL ?? 'redis://localhost:6379');
 const queue = new Queue('scrape', {
   connection: {
-    host: process.env.REDIS_HOST ?? 'localhost',
-    port: Number(process.env.REDIS_PORT ?? 6379),
+    host: redisUrl.hostname,
+    port: Number(redisUrl.port || 6379),
+    password: redisUrl.password || undefined,
+    username: redisUrl.username || undefined,
+    tls: redisUrl.protocol === 'rediss:' ? {} : undefined,
   },
 });
 
