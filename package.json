@@ -8,13 +8,13 @@
     "node": ">=22.0.0"
   },
   "scripts": {
-    "dev": "pnpm --parallel --filter './apps/*' dev",
-    "start:api": "pnpm --filter @openscrape/api start",
-    "start:worker": "pnpm --filter @openscrape/worker start",
-    "build": "pnpm -r build",
-    "lint": "pnpm -r lint",
-    "test": "pnpm -r test",
-    "typecheck": "pnpm -r typecheck",
+    "dev": "npx --yes pnpm@10.15.0 --parallel --filter './apps/*' dev",
+    "start:api": "npx --yes pnpm@10.15.0 --filter @openscrape/api start",
+    "start:worker": "npx --yes pnpm@10.15.0 --filter @openscrape/worker start",
+    "build": "npx --yes pnpm@10.15.0 -r build",
+    "lint": "npx --yes pnpm@10.15.0 -r lint",
+    "test": "npx --yes pnpm@10.15.0 -r test",
+    "typecheck": "npx --yes pnpm@10.15.0 -r typecheck",
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down"
   }
