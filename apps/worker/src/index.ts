@@ -135,7 +135,8 @@ async function validateResolvedUrl(value: string): Promise<string | undefined> {
   const hostname = new URL(value).hostname;
   const addresses = await lookup(hostname, { all: true, verbatim: true });
   for (const address of addresses) {
-    if (validateTargetUrl(`http://${address.address}`)) {
+    const resolvedUrl = address.address.includes(':') ? `http://[${address.address}]` : `http://${address.address}`;
+    if (validateTargetUrl(resolvedUrl)) {
       return 'Target resolves to a private or local network address.';
     }
   }
