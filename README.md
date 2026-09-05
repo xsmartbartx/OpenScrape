@@ -387,6 +387,11 @@ npx pnpm --dir apps/api db:migrate
 Use `db:push` only for disposable local development databases; it is not a
 production migration workflow.
 
+The initial migration is a baseline for a new database. If a database was
+previously created with `db:push`, take a backup, compare it with the migration,
+and mark the baseline as applied with Prisma's `migrate resolve` procedure before
+using `db:migrate` in production.
+
 Use `npx pnpm` when pnpm is not installed globally. Do not run `npx tsc`,
 because that can resolve an unrelated npm package named `tsc`.
 Production packaging will add container images, health checks, secret injection,
