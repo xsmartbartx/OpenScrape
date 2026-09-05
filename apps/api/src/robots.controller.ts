@@ -32,7 +32,7 @@ export class RobotsController {
   }
 
   @Post()
-  async createRobot(@Body() body: CreateRobotInput, @Req() request: Request): Promise<Robot> {
+  async createRobot(@Body() body: CreateRobotInput, @Req() request?: Request): Promise<Robot> {
     this.assertSafeUrl(body.startUrl);
     const robot = await this.prisma.robot.create({
       data: {
@@ -41,7 +41,7 @@ export class RobotsController {
         type: body.type,
         startUrl: body.startUrl,
         status: 'ready',
-        workspaceId: request.user?.workspaceId,
+        workspaceId: request?.user?.workspaceId,
       },
     });
 
@@ -55,10 +55,10 @@ export class RobotsController {
   }
 
   @Post(':id/runs')
-  async createRun(@Param('id') robotId: string, @Body() body: Pick<CreateRunInput, 'url'>, @Req() request: Request): Promise<RunStatus> {
+  async createRun(@Param('id') robotId: string, @Body() body: Pick<CreateRunInput, 'url'>, @Req() request?: Request): Promise<RunStatus> {
     this.assertSafeUrl(body.url);
     const existingRobot = await this.prisma.robot.findFirst({
-      where: { id: robotId, ...(request.user?.workspaceId ? { workspaceId: request.user.workspaceId } : {}) },
+      where: { id: robotId, ...(request?.user?.workspaceId ? { workspaceId: request.user.workspaceId } : {}) },
     });
 
     if (!existingRobot) {
@@ -69,13 +69,13 @@ export class RobotsController {
           type: 'scrape',
           startUrl: body.url,
           status: 'ready',
-          workspaceId: request.user?.workspaceId,
+          workspaceId: request?.user?.workspaceId,
         },
       });
     }
 
     const robot = await this.prisma.robot.findFirst({
-      where: { id: robotId, ...(request.user?.workspaceId ? { workspaceId: request.user.workspaceId } : {}) },
+      where: { id: robotId, ...(request?.user?.workspaceId ? { workspaceId: request.user.workspaceId } : {}) },
     });
     if (!robot) throw new NotFoundException('Robot not found.');
     const runCount = await this.prisma.run.count({
