@@ -378,6 +378,15 @@ npx pnpm --dir apps/api start
 npx pnpm --dir apps/worker start
 ```
 
+Production deployments must apply committed Prisma migrations with:
+
+```bash
+npx pnpm --dir apps/api db:migrate
+```
+
+Use `db:push` only for disposable local development databases; it is not a
+production migration workflow.
+
 Use `npx pnpm` when pnpm is not installed globally. Do not run `npx tsc`,
 because that can resolve an unrelated npm package named `tsc`.
 Production packaging will add container images, health checks, secret injection,
