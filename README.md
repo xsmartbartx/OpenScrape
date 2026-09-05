@@ -399,8 +399,11 @@ cloud deployment is called production-ready.
   workspace-scoped API keys. API key creation and revocation should be exposed
   only after authenticated user sessions are enabled.
 - Account endpoints are available at `POST /api/v1/auth/register` and
-  `POST /api/v1/auth/login`. Passwords require at least 12 characters, are
-  stored using salted `scrypt`, and session tokens expire after 30 days.
+  `POST /api/v1/auth/login`. Authenticated session endpoints are available at
+  `GET /api/v1/auth/me` and `POST /api/v1/auth/logout`. Passwords require at
+  least 12 characters, are stored using salted `scrypt`, and session tokens
+  expire after 30 days. Set `AUTH_REQUIRED=true` in hosted deployments to scope
+  robot and artifact access to the session workspace.
 - Provide audit events and deletion controls for user data and artifacts.
 - Drain workers and close database/Redis connections during `SIGTERM` and `SIGINT`
   so rolling restarts do not interrupt active jobs abruptly.
