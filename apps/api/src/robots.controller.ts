@@ -4,6 +4,9 @@ import type { Request } from 'express';
 import type { CreateRobotInput, CreateRunInput, Robot, RunStatus } from '@openscrape/contracts';
 import { PrismaService } from './prisma.service';
 import { validateTargetUrl } from './url-validation';
+import type { SessionUser } from './session.guard';
+
+type RequestWithUser = Request & { user?: SessionUser };
 
 export type QueueClient = {
   addJob: (url: string, robotId: string, jobId?: string) => Promise<{ id: string }>;
@@ -17,7 +20,7 @@ export class RobotsController {
   ) {}
 
   @Get()
-  async getRobots(@Req() request: Request): Promise<Robot[]> {
+  async getRobots(@Req() request: RequestWithUser): Promise<Robot[]> {
     const robots = await this.prisma.robot.findMany({
       where: request.user?.workspaceId ? { workspaceId: request.user.workspaceId } : undefined,
     });
@@ -32,7 +35,7 @@ export class RobotsController {
   }
 
   @Post()
-  async createRobot(@Body() body: CreateRobotInput, @Req() request?: Request): Promise<Robot> {
+  async createRobot(@Body() body: CreateRobotInput, @Req() request?: RequestWithUser): Promise<Robot> {
     this.assertSafeUrl(body.startUrl);
     const robot = await this.prisma.robot.create({
       data: {
@@ -55,7 +58,7 @@ export class RobotsController {
   }
 
   @Post(':id/runs')
-  async createRun(@Param('id') robotId: string, @Body() body: Pick<CreateRunInput, 'url'>, @Req() request?: Request): Promise<RunStatus> {
+  async createRun(@Param('id') robotId: string, @Body() body: Pick<CreateRunInput, 'url'>, @Req() request?: RequestWithUser): Promise<RunStatus> {
     this.assertSafeUrl(body.url);
     const existingRobot = await this.prisma.robot.findFirst({
       where: { id: robotId, ...(request?.user?.workspaceId ? { workspaceId: request.user.workspaceId } : {}) },
@@ -123,7 +126,7 @@ export class RobotsController {
   }
 
   @Get(':id/runs')
-  async getRuns(@Param('id') robotId: string, @Req() request?: Request): Promise<RunStatus[]> {
+  async getRuns(@Param('id') robotId: string, @Req() request?: RequestWithUser): Promise<RunStatus[]> {
     const runs = await this.prisma.run.findMany({
       where: { robotId, ...(request?.user?.workspaceId ? { robot: { workspaceId: request.user.workspaceId } } : {}) },
       orderBy: { startedAt: 'desc' },
@@ -142,14 +145,14 @@ export class RobotsController {
 
   @Get(':id/runs/export.json')
   @Header('Content-Disposition', 'attachment; filename="openscrape-runs.json"')
-  async exportJson(@Param('id') robotId: string, @Req() request: Request): Promise<RunStatus[]> {
+  async exportJson(@Param('id') robotId: string, @Req() request: RequestWithUser): Promise<RunStatus[]> {
     return this.getRuns(robotId, request);
   }
 
   @Get(':id/runs/export.csv')
   @Header('Content-Type', 'text/csv; charset=utf-8')
   @Header('Content-Disposition', 'attachment; filename="openscrape-runs.csv"')
-  async exportCsv(@Param('id') robotId: string, @Req() request: Request): Promise<string> {
+  async exportCsv(@Param('id') robotId: string, @Req() request: RequestWithUser): Promise<string> {
     const runs = await this.getRuns(robotId, request);
     const headers = ['id', 'robotId', 'url', 'status', 'startedAt', 'finishedAt', 'result'];
     const rows = runs.map((run) => headers.map((header) => this.escapeCsv(String(run[header as keyof RunStatus] ?? ''))).join(','));
@@ -159,7 +162,7 @@ export class RobotsController {
 
   @Get(':id/runs/:runId/html')
   @Header('Content-Type', 'text/html; charset=utf-8')
-  async getRunHtml(@Param('id') robotId: string, @Param('runId') runId: string, @Req() request: Request): Promise<string> {
+  async getRunHtml(@Param('id') robotId: string, @Param('runId') runId: string, @Req() request: RequestWithUser): Promise<string> {
     const run = await this.prisma.run.findFirst({
       where: { id: runId, robotId, ...(request.user?.workspaceId ? { robot: { workspaceId: request.user.workspaceId } } : {}) },
       select: { html: true },
@@ -176,7 +179,7 @@ export class RobotsController {
   async getRunScreenshot(
     @Param('id') robotId: string,
     @Param('runId') runId: string,
-    @Req() request: Request,
+    @Req() request: RequestWithUser,
     @Res() response: Response,
   ): Promise<void> {
     const run = await this.prisma.run.findFirst({
