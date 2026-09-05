@@ -395,6 +395,9 @@ cloud deployment is called production-ready.
 - Enable API key protection in hosted deployments with `API_KEYS_REQUIRED=true`
   and store only the SHA-256 value in `API_KEY_HASH`. Send the raw key using the
   `x-api-key` header; the raw secret is never persisted by OpenScrape.
+- The database model now includes users, workspaces, memberships, and revokable
+  workspace-scoped API keys. API key creation and revocation should be exposed
+  only after authenticated user sessions are enabled.
 - Provide audit events and deletion controls for user data and artifacts.
 - Drain workers and close database/Redis connections during `SIGTERM` and `SIGINT`
   so rolling restarts do not interrupt active jobs abruptly.
@@ -427,6 +430,7 @@ cloud deployment is called production-ready.
 ### Phase 3 — Production product
 
 - [ ] Organizations, roles, API keys, audit log, and billing limits.
+- [x] Persist users, workspaces, memberships, and revokable API key records.
 - [x] Enforce a configurable free-plan run quota per billing period.
 - [ ] AI extraction with usage/cost controls.
 - [ ] Schedules, retries, cancellation, and live logs.
