@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { lookup } from 'node:dns/promises';
 import { Worker } from 'bullmq';
 import IORedis from 'ioredis';
 import { chromium } from 'playwright';
@@ -27,7 +28,7 @@ const worker = new Worker(
     const jobId = String(job.id ?? 'unknown');
     console.log(`Received scrape job ${jobId} for ${url}`);
 
-    const urlError = validateTargetUrl(url);
+    const urlError = await validateResolvedUrl(url);
     if (urlError) {
       throw new Error(urlError);
     }
@@ -47,7 +48,7 @@ const worker = new Worker(
       const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
       await page.route('**/*', async (route) => {
         const requestUrl = route.request().url();
-        if (validateTargetUrl(requestUrl)) {
+        if (await validateResolvedUrl(requestUrl)) {
           await route.abort('blockedbyclient');
           return;
         }
@@ -141,6 +142,18 @@ async function fetchPage(initialUrl: string): Promise<{ html: string; finalUrl: 
       clearTimeout(timeout);
       throw error;
     }
+async function validateResolvedUrl(value: string): Promise<string | undefined> {
+  const syntaxError = validateTargetUrl(value);
+  if (syntaxError) return syntaxError;
+
+  const hostname = new URL(value).hostname;
+  const addresses = await lookup(hostname, { all: true, verbatim: true });
+  for (const address of addresses) {
+    if (validateTargetUrl(`http://${address.address}`)) {
+      return 'Target resolves to a private or local network address.';
+    }
+  }
+}
 
     if (response.status >= 300 && response.status < 400) {
       const location = response.headers.get('location');
@@ -164,7 +177,7 @@ async function fetchPage(initialUrl: string): Promise<{ html: string; finalUrl: 
       throw new Error(`Target returned HTTP ${response.status}.`);
     }
     const contentLength = Number(response.headers.get('content-length') ?? 0);
-    if (contentLength > maxResponseBytes) {
+      const urlError = await validateResolvedUrl(nextUrl);
       clearTimeout(timeout);
       throw new Error('Target response exceeds the 5 MB limit.');
     }
