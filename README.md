@@ -398,6 +398,9 @@ cloud deployment is called production-ready.
 - The database model now includes users, workspaces, memberships, and revokable
   workspace-scoped API keys. API key creation and revocation should be exposed
   only after authenticated user sessions are enabled.
+- Account endpoints are available at `POST /api/v1/auth/register` and
+  `POST /api/v1/auth/login`. Passwords require at least 12 characters, are
+  stored using salted `scrypt`, and session tokens expire after 30 days.
 - Provide audit events and deletion controls for user data and artifacts.
 - Drain workers and close database/Redis connections during `SIGTERM` and `SIGINT`
   so rolling restarts do not interrupt active jobs abruptly.
@@ -431,6 +434,7 @@ cloud deployment is called production-ready.
 
 - [ ] Organizations, roles, API keys, audit log, and billing limits.
 - [x] Persist users, workspaces, memberships, and revokable API key records.
+- [x] Add password-based registration and login sessions.
 - [x] Enforce a configurable free-plan run quota per billing period.
 - [ ] AI extraction with usage/cost controls.
 - [ ] Schedules, retries, cancellation, and live logs.
