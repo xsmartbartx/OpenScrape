@@ -5,10 +5,6 @@ import { PrismaService } from './prisma.service';
 
 export type SessionUser = { id: string; email: string; displayName: string; workspaceId: string };
 
-declare module 'express-serve-static-core' {
-  interface Request { user?: SessionUser }
-}
-
 @Injectable()
 export class SessionGuard implements CanActivate {
   constructor(private readonly prisma: PrismaService) {}
@@ -29,7 +25,7 @@ export class SessionGuard implements CanActivate {
     const membership = session?.user.memberships[0];
     if (!session || !membership) throw new UnauthorizedException('Invalid or expired session.');
 
-    request.user = {
+    (request as Request & { user?: SessionUser }).user = {
       id: session.user.id,
       email: session.user.email,
       displayName: session.user.displayName,
