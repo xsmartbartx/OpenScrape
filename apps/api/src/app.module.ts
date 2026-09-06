@@ -9,6 +9,7 @@ import { HealthController } from './health.controller';
 import { PrismaService } from './prisma.service';
 import { RobotsController } from './robots.controller';
 import { SessionGuard } from './session.guard';
+import { HealthController } from './health.controller';
 
 const redisUrl = new URL(process.env.REDIS_URL ?? 'redis://localhost:6379');
 const queue = new Queue('scrape', {
