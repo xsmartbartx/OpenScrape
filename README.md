@@ -443,16 +443,17 @@ cloud deployment is called production-ready.
 - [x] Confirm MVP architecture and supported local services.
 - [x] Create workspace packages and shared configuration.
 - [x] Add Docker Compose for PostgreSQL, Redis, and MinIO.
-- [x] Add environment contract and health checks.
+- [x] Add environment contract and liveness/readiness health checks.
 
 ### Phase 1 — First usable vertical slice
 
-- [ ] NestJS health endpoint and Prisma schema.
-- [ ] Create/list robots through REST.
-- [ ] Queue a single-URL scrape.
-- [ ] Worker fetches a page with Playwright and persists a result.
-- [ ] Next.js dashboard creates a robot and displays run status/results.
-- [ ] Automated unit, integration, and smoke tests.
+- [x] NestJS health endpoint and Prisma schema.
+- [x] Create/list robots through REST.
+- [x] Queue a single-URL scrape.
+- [x] Worker fetches a page with Playwright and persists a result.
+- [x] Next.js dashboard creates a robot and displays run status/results.
+- [x] Automated API unit tests and live vertical-slice verification.
+- [ ] Automated browser E2E and CI smoke tests.
 
 ### Phase 2 — No-code extraction
 
@@ -463,19 +464,28 @@ cloud deployment is called production-ready.
 
 ### Phase 3 — Production product
 
-- [ ] Organizations, roles, API keys, audit log, and billing limits.
+- [x] Organizations/workspaces, roles, API keys, and billing limits foundation.
+- [ ] Audit log and retention/deletion controls.
 - [x] Persist users, workspaces, memberships, and revokable API key records.
 - [x] Add password-based registration and login sessions.
 - [x] Enforce a configurable free-plan run quota per billing period.
 - [ ] AI extraction with usage/cost controls.
-- [ ] Schedules, retries, cancellation, and live logs.
-- [ ] Exports, SDK, CLI, observability, backups, and deployment guides.
+- [x] Queue retries, exponential backoff, graceful worker shutdown, and exports.
+- [ ] Schedules, cancellation, and live logs.
+- [ ] SDK and CLI.
+- [x] Liveness/readiness, rate limits, security headers, SSRF controls, and deployment documentation.
+- [ ] Centralized observability, backups, restore drills, and production infrastructure.
+- [ ] Stripe/Paddle checkout, subscription webhooks, plan synchronization, and invoices.
 
 ### Definition of Done for MVP
 
 A new user can start the local stack, create a robot for a public URL, run it,
 see a successful result in the dashboard, retrieve the same result through the
 versioned API, and repeat the run without manual database or queue operations.
+
+The local MVP definition is currently satisfied. Commercial production release
+remains gated on payment integration, audit controls, centralized monitoring,
+backup/restore drills, infrastructure hardening, and automated browser E2E tests.
 
 ## 18. Repository Layout
 
