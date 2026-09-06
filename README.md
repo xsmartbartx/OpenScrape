@@ -432,6 +432,8 @@ cloud deployment is called production-ready.
 - Session-authenticated API key management is available at `GET/POST
   /api/v1/api-keys` and `DELETE /api/v1/api-keys/:id`. A newly created secret is
   returned once; listings never expose key material, and revocation is immediate.
+- Workspace-scoped audit events are available at `GET /api/v1/audit` and record
+  authentication plus API-key lifecycle actions without storing secrets.
 - Provide audit events and deletion controls for user data and artifacts.
 - Drain workers and close database/Redis connections during `SIGTERM` and `SIGINT`
   so rolling restarts do not interrupt active jobs abruptly.
@@ -465,7 +467,8 @@ cloud deployment is called production-ready.
 ### Phase 3 — Production product
 
 - [x] Organizations/workspaces, roles, API keys, and billing limits foundation.
-- [ ] Audit log and retention/deletion controls.
+- [x] Workspace-scoped audit log for auth and API-key lifecycle actions.
+- [ ] Retention/deletion controls.
 - [x] Persist users, workspaces, memberships, and revokable API key records.
 - [x] Add password-based registration and login sessions.
 - [x] Enforce a configurable free-plan run quota per billing period.
