@@ -20,6 +20,9 @@ const connection = new IORedis(process.env.REDIS_URL ?? 'redis://localhost:6379'
 const requestTimeoutMs = 30000;
 const maxRedirects = 5;
 const maxResponseBytes = 5 * 1024 * 1024;
+const userAgent = process.env.SCRAPER_USER_AGENT ?? 'OpenScrapeBot/0.1 (+https://openscrape.local/bot)';
+const respectRobots = process.env.RESPECT_ROBOTS !== 'false';
+const robotsFailClosed = process.env.ROBOTS_FAIL_CLOSED === 'true';
 
 const worker = new Worker(
   'scrape',
@@ -40,12 +43,19 @@ const worker = new Worker(
       }).catch(() => undefined);
     }
 
+    if (respectRobots) {
+      await assertRobotsAllowed(url);
+    }
+
     const { html, finalUrl } = await fetchPage(url);
     let screenshot: Uint8Array<ArrayBuffer> | undefined;
 
     try {
       const browser = await chromium.launch({ headless: true });
-      const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+      const page = await browser.newPage({
+        viewport: { width: 1440, height: 900 },
+        userAgent,
+      });
       await page.route('**/*', async (route) => {
         const requestUrl = route.request().url();
         if (await validateResolvedUrl(requestUrl)) {
@@ -151,7 +161,11 @@ async function fetchPage(initialUrl: string): Promise<{ html: string; finalUrl: 
     let response: Response;
 
     try {
-      response = await fetch(currentUrl, { redirect: 'manual', signal: controller.signal });
+      response = await fetch(currentUrl, {
+        redirect: 'manual',
+        signal: controller.signal,
+        headers: { 'user-agent': userAgent },
+      });
     } catch (error) {
       clearTimeout(timeout);
       throw error;
@@ -195,4 +209,43 @@ async function fetchPage(initialUrl: string): Promise<{ html: string; finalUrl: 
   }
 
   throw new Error(`Target exceeded the ${maxRedirects} redirect limit.`);
+}
+
+async function assertRobotsAllowed(targetUrl: string): Promise<void> {
+  const target = new URL(targetUrl);
+  const robotsUrl = `${target.origin}/robots.txt`;
+
+  try {
+    const { html: robots } = await fetchPage(robotsUrl);
+    if (!isAllowedByRobots(robots, target.pathname)) {
+      throw new Error(`Scrape blocked by robots.txt for ${target.pathname}.`);
+    }
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith('Scrape blocked')) throw error;
+    if (robotsFailClosed) throw new Error('robots.txt could not be fetched.');
+    console.warn(`Could not fetch robots.txt for ${target.origin}; continuing because ROBOTS_FAIL_CLOSED is false.`);
+  }
+}
+
+function isAllowedByRobots(contents: string, pathname: string): boolean {
+  let applies = false;
+  let disallow: string[] = [];
+
+  for (const rawLine of contents.split(/\r?\n/)) {
+    const line = rawLine.split('#', 1)[0].trim();
+    const separator = line.indexOf(':');
+    if (separator < 0) continue;
+    const field = line.slice(0, separator).trim().toLowerCase();
+    const value = line.slice(separator + 1).trim();
+
+    if (field === 'user-agent') {
+      applies = value === '*' || value.toLowerCase() === 'openscrapebot';
+      if (applies) disallow = [];
+      continue;
+    }
+
+    if (applies && field === 'disallow' && value) disallow.push(value);
+  }
+
+  return !disallow.some((rule) => pathname.startsWith(rule));
 }
