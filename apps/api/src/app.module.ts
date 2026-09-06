@@ -6,10 +6,10 @@ import { AppController } from './app.controller';
 import { ApiKeyGuard } from './api-key.guard';
 import { AuthController } from './auth.controller';
 import { HealthController } from './health.controller';
+import { HealthService } from './health.service';
 import { PrismaService } from './prisma.service';
 import { RobotsController } from './robots.controller';
 import { SessionGuard } from './session.guard';
-import { HealthController } from './health.controller';
 
 const redisUrl = new URL(process.env.REDIS_URL ?? 'redis://localhost:6379');
 const queue = new Queue('scrape', {
@@ -31,6 +31,7 @@ const apiRateLimit = Number(process.env.API_RATE_LIMIT ?? 60);
   controllers: [AppController, AuthController, HealthController, RobotsController],
   providers: [
     PrismaService,
+    HealthService,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
