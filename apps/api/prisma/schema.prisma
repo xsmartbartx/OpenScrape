@@ -16,6 +16,7 @@ model User {
   memberships Membership[]
   apiKeys     ApiKey[]
   sessions    Session[]
+  auditEvents AuditEvent[]
 }
 
 model Session {
@@ -35,6 +36,7 @@ model Workspace {
   memberships Membership[]
   apiKeys     ApiKey[]
   robots      Robot[]
+  auditEvents AuditEvent[]
 }
 
 model Membership {
@@ -59,6 +61,22 @@ model ApiKey {
   createdAt   DateTime  @default(now())
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model AuditEvent {
+  id           String     @id
+  action       String
+  userId       String?
+  workspaceId  String?
+  resourceType String?
+  resourceId   String?
+  metadata     Json?
+  createdAt    DateTime   @default(now())
+  user         User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  workspace    Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([userId, createdAt])
 }
 
 model Robot {
