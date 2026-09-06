@@ -4,6 +4,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { Queue } from 'bullmq';
 import { AppController } from './app.controller';
 import { ApiKeyGuard } from './api-key.guard';
+import { ApiKeysController } from './api-keys.controller';
 import { AuthController } from './auth.controller';
 import { HealthController } from './health.controller';
 import { HealthService } from './health.service';
@@ -28,7 +29,7 @@ const apiRateLimit = Number(process.env.API_RATE_LIMIT ?? 60);
   imports: [
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: Number.isFinite(apiRateLimit) && apiRateLimit > 0 ? apiRateLimit : 60 }]),
   ],
-  controllers: [AppController, AuthController, HealthController, RobotsController],
+  controllers: [AppController, ApiKeysController, AuthController, HealthController, RobotsController],
   providers: [
     PrismaService,
     HealthService,
