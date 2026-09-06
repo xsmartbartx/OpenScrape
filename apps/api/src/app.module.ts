@@ -11,6 +11,7 @@ import { HealthService } from './health.service';
 import { PrismaService } from './prisma.service';
 import { RobotsController } from './robots.controller';
 import { SessionGuard } from './session.guard';
+import { SessionCleanupService } from './session-cleanup.service';
 
 const redisUrl = new URL(process.env.REDIS_URL ?? 'redis://localhost:6379');
 const queue = new Queue('scrape', {
@@ -33,6 +34,7 @@ const apiRateLimit = Number(process.env.API_RATE_LIMIT ?? 60);
   providers: [
     PrismaService,
     HealthService,
+    SessionCleanupService,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
