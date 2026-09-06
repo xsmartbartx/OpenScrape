@@ -1,7 +1,8 @@
-import { ConflictException, Controller, Post, Body, Get, Req, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Controller, Post, Body, Get, Req, UnauthorizedException, Optional } from '@nestjs/common';
 import { createHash, randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import { PrismaService } from './prisma.service';
+import { AuditService } from './audit.service';
 import type { Request } from 'express';
 
 const scrypt = promisify(scryptCallback);
@@ -15,7 +16,7 @@ type AuthInput = {
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, @Optional() private readonly audit?: AuditService) {}
 
   @Post('register')
   async register(@Body() body: AuthInput) {
@@ -42,6 +43,8 @@ export class AuthController {
       },
     });
 
+    await this.audit?.record({ action: 'auth.register', userId: user.id, workspaceId: workspace.id });
+
     return this.createSession(user.id, workspace.id, user.email, user.displayName);
   }
 
@@ -59,6 +62,8 @@ export class AuthController {
       orderBy: { createdAt: 'asc' },
     });
     if (!membership) throw new UnauthorizedException('Account has no workspace membership.');
+
+    await this.audit?.record({ action: 'auth.login', userId: user.id, workspaceId: membership.workspaceId });
 
     return this.createSession(user.id, membership.workspaceId, user.email, user.displayName);
   }
@@ -80,6 +85,7 @@ export class AuthController {
   async logout(@Req() request: Request) {
     const token = this.bearerToken(request);
     await this.prisma.session.deleteMany({ where: { tokenHash: this.hashToken(token) } });
+    await this.audit?.record({ action: 'auth.logout' });
     return { success: true };
   }
 

@@ -3,6 +3,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import type { Request } from 'express';
 import type { SessionUser } from './session.guard';
 import { PrismaService } from './prisma.service';
+import { AuditService } from './audit.service';
 
 type RequestWithUser = Request & { user?: SessionUser };
 
@@ -10,7 +11,7 @@ type CreateApiKeyInput = { name?: string };
 
 @Controller('api-keys')
 export class ApiKeysController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly audit: AuditService) {}
 
   @Get()
   async list(@Req() request: RequestWithUser) {
@@ -36,6 +37,7 @@ export class ApiKeysController {
       },
       select: { id: true, name: true, createdAt: true },
     });
+    await this.audit.record({ action: 'api_key.create', userId: user.id, workspaceId: user.workspaceId, resourceType: 'ApiKey', resourceId: key.id });
 
     return { ...key, secret };
   }
@@ -47,6 +49,7 @@ export class ApiKeysController {
       where: { id, userId: user.id, workspaceId: user.workspaceId, revokedAt: null },
       data: { revokedAt: new Date() },
     });
+    if (result.count === 1) await this.audit.record({ action: 'api_key.revoke', userId: user.id, workspaceId: user.workspaceId, resourceType: 'ApiKey', resourceId: id });
 
     return { revoked: result.count === 1 };
   }
