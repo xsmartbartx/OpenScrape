@@ -23,6 +23,8 @@ const maxResponseBytes = 5 * 1024 * 1024;
 const userAgent = process.env.SCRAPER_USER_AGENT ?? 'OpenScrapeBot/0.1 (+https://openscrape.local/bot)';
 const respectRobots = process.env.RESPECT_ROBOTS !== 'false';
 const robotsFailClosed = process.env.ROBOTS_FAIL_CLOSED === 'true';
+const domainRequestIntervalMs = Number(process.env.DOMAIN_REQUEST_INTERVAL_MS ?? 1000);
+const nextDomainRequestAt = new Map<string, number>();
 
 const worker = new Worker(
   'scrape',
@@ -156,6 +158,7 @@ async function fetchPage(initialUrl: string): Promise<{ html: string; finalUrl: 
   let currentUrl = initialUrl;
 
   for (let redirect = 0; redirect <= maxRedirects; redirect += 1) {
+    await waitForDomain(new URL(currentUrl).hostname);
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), requestTimeoutMs);
     let response: Response;
@@ -209,6 +212,17 @@ async function fetchPage(initialUrl: string): Promise<{ html: string; finalUrl: 
   }
 
   throw new Error(`Target exceeded the ${maxRedirects} redirect limit.`);
+}
+
+async function waitForDomain(hostname: string): Promise<void> {
+  const interval = Number.isFinite(domainRequestIntervalMs) && domainRequestIntervalMs >= 0
+    ? domainRequestIntervalMs
+    : 1000;
+  const now = Date.now();
+  const nextAllowedAt = Math.max(now, nextDomainRequestAt.get(hostname) ?? now);
+  nextDomainRequestAt.set(hostname, nextAllowedAt + interval);
+  const waitMs = nextAllowedAt - now;
+  if (waitMs > 0) await new Promise((resolve) => setTimeout(resolve, waitMs));
 }
 
 async function assertRobotsAllowed(targetUrl: string): Promise<void> {

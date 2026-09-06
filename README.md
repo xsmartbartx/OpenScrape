@@ -406,6 +406,8 @@ cloud deployment is called production-ready.
   to 1 MB.
 - Enforce a 30-second request timeout, a five-redirect limit, and a 5 MB response
   limit in the worker.
+- Enforce a configurable per-domain request interval with
+  `DOMAIN_REQUEST_INTERVAL_MS` (default: 1000 ms).
 - Respect `robots.txt`, per-domain rate limits, request timeouts, and page limits.
 - Encrypt credentials and integration configuration at rest.
 - Hash API keys; display the secret only once.
