@@ -24,6 +24,14 @@ type ScrapeResult = {
   snippet?: string;
 };
 
+type ApiKey = {
+  id: string;
+  name: string;
+  createdAt: string;
+  lastUsedAt?: string;
+  revokedAt?: string;
+};
+
 function parseResult(result?: string): ScrapeResult | undefined {
   if (!result) return undefined;
 
@@ -52,6 +60,9 @@ export default function HomePage() {
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [authForm, setAuthForm] = useState({ email: '', password: '', displayName: '' });
   const [authLoading, setAuthLoading] = useState(false);
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
+  const [newKeyName, setNewKeyName] = useState('');
+  const [newSecret, setNewSecret] = useState<string>();
 
   const apiFetch = (path: string, options: RequestInit = {}) => {
     const headers = new Headers(options.headers);
@@ -81,7 +92,14 @@ export default function HomePage() {
   useEffect(() => {
     if (!token) return;
     void fetchRobots().catch((loadError: Error) => setError(loadError.message));
+    void loadApiKeys().catch((loadError: Error) => setError(loadError.message));
   }, [token]);
+
+  const loadApiKeys = async () => {
+    const response = await apiFetch('/api-keys');
+    if (!response.ok) throw new Error('Could not load API keys.');
+    setApiKeys(await response.json());
+  };
 
   useEffect(() => {
     if (!selectedRobotId) return;
@@ -121,6 +139,27 @@ export default function HomePage() {
     setToken(undefined);
     setRobots([]);
     setRuns([]);
+    setApiKeys([]);
+    setNewSecret(undefined);
+  };
+
+  const createApiKey = async () => {
+    const response = await apiFetch('/api-keys', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: newKeyName }),
+    });
+    if (!response.ok) throw new Error('Could not create API key.');
+    const created = await response.json();
+    setNewSecret(created.secret);
+    setNewKeyName('');
+    await loadApiKeys();
+  };
+
+  const revokeApiKey = async (id: string) => {
+    const response = await apiFetch(`/api-keys/${id}`, { method: 'DELETE' });
+    if (!response.ok) throw new Error('Could not revoke API key.');
+    await loadApiKeys();
   };
 
   const openArtifact = async (path: string) => {
@@ -200,6 +239,17 @@ export default function HomePage() {
 
       {token ? <>
       <div className="session-bar"><span>Authenticated workspace</span><button type="button" onClick={() => void logout()}>Sign out</button></div>
+      <section className="card key-panel">
+        <div className="panel-heading"><h2>API keys</h2><span className="muted">Secrets are shown once</span></div>
+        <div className="key-create">
+          <input placeholder="Key name" value={newKeyName} onChange={(event) => setNewKeyName(event.target.value)} />
+          <button type="button" onClick={() => void createApiKey().catch((keyError: Error) => setError(keyError.message))}>Create key</button>
+        </div>
+        {newSecret ? <div className="secret-box"><strong>Copy this secret now:</strong><code>{newSecret}</code><button type="button" onClick={() => setNewSecret(undefined)}>Dismiss</button></div> : null}
+        <ul className="key-list">
+          {apiKeys.map((key) => <li key={key.id}><div><strong>{key.name}</strong><small>Created {new Date(key.createdAt).toLocaleString()}</small></div>{key.revokedAt ? <span>Revoked</span> : <button type="button" onClick={() => void revokeApiKey(key.id).catch((keyError: Error) => setError(keyError.message))}>Revoke</button>}</li>)}
+        </ul>
+      </section>
       <section className="grid two-column">
         <form className="card" onSubmit={onSubmit}>
           <h2>Create robot</h2>

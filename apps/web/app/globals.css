@@ -130,6 +130,53 @@ button.selected { background: var(--coral); }
   font-size: 0.9rem;
 }
 
+.key-panel {
+  margin-bottom: 1.5rem;
+}
+
+.muted,
+.key-list small {
+  color: var(--muted);
+}
+
+.key-create {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.key-list {
+  display: grid;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.key-list li,
+.secret-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid var(--line);
+  padding: 0.75rem;
+}
+
+.key-list li > div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.secret-box {
+  margin-bottom: 1rem;
+  background: var(--mint);
+}
+
+.secret-box code {
+  overflow-wrap: anywhere;
+}
+
 .robot-list,
 .run-list {
   list-style: none;
