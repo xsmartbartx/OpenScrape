@@ -41,15 +41,26 @@ const defaultForm = {
 };
 
 export default function HomePage() {
+  const apiBaseUrl = 'http://localhost:3001/api/v1';
   const [robots, setRobots] = useState<Robot[]>([]);
   const [runs, setRuns] = useState<RunStatus[]>([]);
   const [selectedRobotId, setSelectedRobotId] = useState<string>();
   const [form, setForm] = useState(defaultForm);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
+  const [token, setToken] = useState<string>();
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [authForm, setAuthForm] = useState({ email: '', password: '', displayName: '' });
+  const [authLoading, setAuthLoading] = useState(false);
+
+  const apiFetch = (path: string, options: RequestInit = {}) => {
+    const headers = new Headers(options.headers);
+    if (token) headers.set('Authorization', `Bearer ${token}`);
+    return fetch(`${apiBaseUrl}${path}`, { ...options, headers });
+  };
 
   const fetchRobots = async () => {
-    const response = await fetch('http://localhost:3001/api/v1/robots');
+    const response = await apiFetch('/robots');
     if (!response.ok) throw new Error('Could not load robots.');
     const data = await response.json();
     setRobots(data);
@@ -57,15 +68,20 @@ export default function HomePage() {
   };
 
   const fetchRuns = async (robotId: string) => {
-    const response = await fetch(`http://localhost:3001/api/v1/robots/${robotId}/runs`);
+    const response = await apiFetch(`/robots/${robotId}/runs`);
     if (!response.ok) throw new Error('Could not load run history.');
     const data = await response.json();
     setRuns(data);
   };
 
   useEffect(() => {
-    void fetchRobots().catch((loadError: Error) => setError(loadError.message));
+    setToken(window.localStorage.getItem('openscrape_session') ?? undefined);
   }, []);
+
+  useEffect(() => {
+    if (!token) return;
+    void fetchRobots().catch((loadError: Error) => setError(loadError.message));
+  }, [token]);
 
   useEffect(() => {
     if (!selectedRobotId) return;
@@ -78,13 +94,49 @@ export default function HomePage() {
     return () => window.clearInterval(interval);
   }, [selectedRobotId]);
 
+  const onAuthSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setAuthLoading(true);
+    setError(undefined);
+    try {
+      const response = await fetch(`${apiBaseUrl}/auth/${authMode}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(authForm),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message ?? 'Authentication failed.');
+      window.localStorage.setItem('openscrape_session', data.token);
+      setToken(data.token);
+    } catch (authError) {
+      setError(authError instanceof Error ? authError.message : 'Authentication failed.');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    if (token) await apiFetch('/auth/logout', { method: 'POST' }).catch(() => undefined);
+    window.localStorage.removeItem('openscrape_session');
+    setToken(undefined);
+    setRobots([]);
+    setRuns([]);
+  };
+
+  const openArtifact = async (path: string) => {
+    const response = await apiFetch(path);
+    if (!response.ok) throw new Error('Could not load artifact.');
+    const blobUrl = URL.createObjectURL(await response.blob());
+    window.open(blobUrl, '_blank', 'noopener,noreferrer');
+  };
+
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
     setError(undefined);
 
     try {
-      const response = await fetch('http://localhost:3001/api/v1/robots', {
+      const response = await apiFetch('/robots', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
@@ -106,7 +158,7 @@ export default function HomePage() {
     setError(undefined);
 
     try {
-      const response = await fetch(`http://localhost:3001/api/v1/robots/${robotId}/runs`, {
+      const response = await apiFetch(`/robots/${robotId}/runs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url }),
@@ -129,6 +181,25 @@ export default function HomePage() {
 
       {error ? <p className="error-message" role="alert">{error}</p> : null}
 
+      {!token ? (
+        <form className="card auth-card" onSubmit={onAuthSubmit}>
+          <div className="panel-heading">
+            <h2>{authMode === 'login' ? 'Sign in' : 'Create account'}</h2>
+            <button type="button" onClick={() => setAuthMode((mode) => mode === 'login' ? 'register' : 'login')}>
+              {authMode === 'login' ? 'Register' : 'Sign in'}
+            </button>
+          </div>
+          {authMode === 'register' ? (
+            <label>Display name<input value={authForm.displayName} onChange={(event) => setAuthForm((current) => ({ ...current, displayName: event.target.value }))} /></label>
+          ) : null}
+          <label>Email<input type="email" required value={authForm.email} onChange={(event) => setAuthForm((current) => ({ ...current, email: event.target.value }))} /></label>
+          <label>Password<input type="password" required minLength={12} value={authForm.password} onChange={(event) => setAuthForm((current) => ({ ...current, password: event.target.value }))} /></label>
+          <button type="submit" disabled={authLoading}>{authLoading ? 'Working...' : authMode === 'login' ? 'Sign in' : 'Create account'}</button>
+        </form>
+      ) : null}
+
+      {token ? <>
+      <div className="session-bar"><span>Authenticated workspace</span><button type="button" onClick={() => void logout()}>Sign out</button></div>
       <section className="grid two-column">
         <form className="card" onSubmit={onSubmit}>
           <h2>Create robot</h2>
@@ -196,8 +267,8 @@ export default function HomePage() {
           <h2>Recent runs</h2>
           {selectedRobotId ? (
             <div className="export-actions">
-              <a href={`http://localhost:3001/api/v1/robots/${selectedRobotId}/runs/export.json`} download>JSON</a>
-              <a href={`http://localhost:3001/api/v1/robots/${selectedRobotId}/runs/export.csv`} download>CSV</a>
+              <button type="button" onClick={() => void openArtifact(`/robots/${selectedRobotId}/runs/export.json`)}>JSON</button>
+              <button type="button" onClick={() => void openArtifact(`/robots/${selectedRobotId}/runs/export.csv`)}>CSV</button>
             </div>
           ) : null}
         </div>
@@ -218,8 +289,8 @@ export default function HomePage() {
                   <small>{new Date(run.startedAt).toLocaleString()}</small>
                   {run.status === 'success' ? (
                     <>
-                      <a href={`http://localhost:3001/api/v1/robots/${run.robotId}/runs/${run.id}/html`} target="_blank" rel="noreferrer">HTML</a>
-                      <a href={`http://localhost:3001/api/v1/robots/${run.robotId}/runs/${run.id}/screenshot`} target="_blank" rel="noreferrer">PNG</a>
+                      <button type="button" onClick={() => void openArtifact(`/robots/${run.robotId}/runs/${run.id}/html`)}>HTML</button>
+                      <button type="button" onClick={() => void openArtifact(`/robots/${run.robotId}/runs/${run.id}/screenshot`)}>PNG</button>
                     </>
                   ) : null}
                 </div>
@@ -228,6 +299,7 @@ export default function HomePage() {
           </ul>
         )}
       </section>
+      </> : null}
     </main>
   );
 }
