@@ -34,6 +34,9 @@ importers:
       helmet:
         specifier: ^8.1.0
         version: 8.3.0
+      ioredis:
+        specifier: ^5.7.0
+        version: 5.11.1
       prisma:
         specifier: ^6.1.0
         version: 6.19.3(typescript@5.9.3)
