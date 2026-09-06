@@ -427,6 +427,8 @@ cloud deployment is called production-ready.
   least 12 characters, are stored using salted `scrypt`, and session tokens
   expire after 30 days. Set `AUTH_REQUIRED=true` in hosted deployments to scope
   robot and artifact access to the session workspace.
+- Expired sessions are removed automatically when the API starts, preventing
+  unbounded session-table growth.
 - Session-authenticated API key management is available at `GET/POST
   /api/v1/api-keys` and `DELETE /api/v1/api-keys/:id`. A newly created secret is
   returned once; listings never expose key material, and revocation is immediate.
