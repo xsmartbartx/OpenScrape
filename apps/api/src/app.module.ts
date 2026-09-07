@@ -14,6 +14,7 @@ import { PrismaService } from './prisma.service';
 import { RobotsController } from './robots.controller';
 import { SessionGuard } from './session.guard';
 import { SessionCleanupService } from './session-cleanup.service';
+import { UsageController } from './usage.controller';
 
 const redisUrl = new URL(process.env.REDIS_URL ?? 'redis://localhost:6379');
 const queue = new Queue('scrape', {
@@ -32,7 +33,7 @@ const apiRateLimit = Number(process.env.API_RATE_LIMIT ?? 60);
   imports: [
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: Number.isFinite(apiRateLimit) && apiRateLimit > 0 ? apiRateLimit : 60 }]),
   ],
-  controllers: [AppController, ApiKeysController, AuditController, AuthController, HealthController, RobotsController],
+  controllers: [AppController, ApiKeysController, AuditController, AuthController, HealthController, RobotsController, UsageController],
   providers: [
     PrismaService,
     AuditService,
