@@ -455,6 +455,8 @@ cloud deployment is called production-ready.
   deleted and the operation is audit logged.
 - For unattended cleanup, set `ARTIFACT_RETENTION_DAYS` to a positive number of
   days. The API performs the cleanup at startup; `0` disables it by default.
+  Set `ARTIFACT_RETENTION_INTERVAL_MS` to a positive interval to repeat cleanup
+  without restarting the API; `0` keeps the scheduler disabled.
 - Provide audit events and deletion controls for user data and artifacts.
 - Drain workers and close database/Redis connections during `SIGTERM` and `SIGINT`
   so rolling restarts do not interrupt active jobs abruptly.
@@ -492,7 +494,7 @@ cloud deployment is called production-ready.
 - [x] Owner-confirmed workspace deletion with audit logging.
 - [x] Owner-controlled artifact retention with audit logging.
 - [x] Configurable startup artifact retention via `ARTIFACT_RETENTION_DAYS`.
-- [ ] Periodic scheduled retention independent of API restarts.
+- [x] Optional periodic retention via `ARTIFACT_RETENTION_INTERVAL_MS`.
 - [x] Persist users, workspaces, memberships, and revokable API key records.
 - [x] Add password-based registration and login sessions.
 - [x] Enforce a configurable free-plan run quota per billing period.
