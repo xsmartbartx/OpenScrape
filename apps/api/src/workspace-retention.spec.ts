@@ -13,10 +13,14 @@ describe('Workspace retention', () => {
     const result = await new WorkspaceController(prisma as any, audit as any).deleteOldArtifacts({ olderThanDays: 30 }, request as any);
 
     expect(result).toEqual({ deletedRuns: 4, olderThanDays: 30 });
-    expect(runUpdate).toHaveBeenCalledWith(expect.objectContaining({
-      where: expect.objectContaining({ robot: { workspaceId: 'workspace-1' }, html: undefined }),
-      data: { html: null, screenshot: null },
-    }));
+    const update = runUpdate.mock.calls[0][0];
+    expect(update.data).toEqual({ html: null, screenshot: null });
+    expect(update.where.robot).toEqual({ workspaceId: 'workspace-1' });
+    expect(update.where.finishedAt.lt).toBeInstanceOf(Date);
+    expect(update.where.OR).toEqual([
+      { html: { not: null } },
+      { screenshot: { not: null } },
+    ]);
     expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({
       action: 'workspace.retention.artifacts',
       metadata: { olderThanDays: 30, deletedArtifacts: 4 },
