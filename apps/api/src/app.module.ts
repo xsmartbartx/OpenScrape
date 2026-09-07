@@ -72,6 +72,12 @@ const apiRateLimit = Number(process.env.API_RATE_LIMIT ?? 60);
 
           return { id: job.id ?? `job-${Date.now()}` };
         },
+        removeJob: async (jobId: string) => {
+          const job = await queue.getJob(jobId);
+          if (!job) return false;
+          await job.remove();
+          return true;
+        },
       }),
     },
   ],

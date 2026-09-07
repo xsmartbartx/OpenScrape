@@ -23,7 +23,7 @@ export interface RunStatus {
   id: string;
   robotId: string;
   url: string;
-  status: 'queued' | 'running' | 'success' | 'failed';
+  status: 'queued' | 'running' | 'success' | 'failed' | 'cancelled';
   startedAt: string;
   finishedAt?: string;
   result?: string;

@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Header, HttpException, HttpStatus, Inject, NotFoundException, Param, Post, Req, Res } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Header, HttpException, HttpStatus, Inject, NotFoundException, Param, Post, Req, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import type { Request } from 'express';
 import type { CreateRobotInput, CreateRunInput, Robot, RunStatus } from '@openscrape/contracts';
@@ -10,6 +10,7 @@ type RequestWithUser = Request & { user?: SessionUser };
 
 export type QueueClient = {
   addJob: (url: string, robotId: string, jobId?: string) => Promise<{ id: string }>;
+  removeJob: (jobId: string) => Promise<boolean>;
 };
 
 @Controller('robots')
