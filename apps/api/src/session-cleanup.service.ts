@@ -8,7 +8,11 @@ export class SessionCleanupService implements OnModuleInit {
   constructor(private readonly prisma: PrismaService) {}
 
   async onModuleInit() {
-    await this.removeExpiredSessions();
+    try {
+      await this.removeExpiredSessions();
+    } catch (error) {
+      this.logger.warn(`Could not clean expired sessions: ${error instanceof Error ? error.message : 'database unavailable'}`);
+    }
   }
 
   async removeExpiredSessions(): Promise<number> {
