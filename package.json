@@ -16,6 +16,8 @@
     "test": "npx --yes pnpm@10.15.0 -r test",
     "typecheck": "npx --yes pnpm@10.15.0 -r typecheck",
     "infra:up": "docker compose up -d",
-    "infra:down": "docker compose down"
+    "infra:down": "docker compose down",
+    "db:backup": "sh ./scripts/db-backup.sh",
+    "db:restore": "sh ./scripts/db-restore.sh"
   }
 }
