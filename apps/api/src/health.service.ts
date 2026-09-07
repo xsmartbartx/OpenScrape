@@ -1,9 +1,10 @@
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import IORedis from 'ioredis';
 import { PrismaService } from './prisma.service';
 
 @Injectable()
 export class HealthService implements OnModuleDestroy {
+  private readonly logger = new Logger(HealthService.name);
   private readonly redis: IORedis;
 
   constructor(private readonly prisma: PrismaService) {
@@ -12,6 +13,7 @@ export class HealthService implements OnModuleDestroy {
       maxRetriesPerRequest: 1,
       lazyConnect: true,
     });
+    this.redis.on('error', (error) => this.logger.warn(`Redis readiness probe failed: ${error.message}`));
   }
 
   async checkDependencies(): Promise<{ database: 'ok' | 'error'; redis: 'ok' | 'error'; ready: boolean }> {
