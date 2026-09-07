@@ -445,6 +445,8 @@ cloud deployment is called production-ready.
   returned once; listings never expose key material, and revocation is immediate.
 - Workspace-scoped audit events are available at `GET /api/v1/audit` and record
   authentication plus API-key lifecycle actions without storing secrets.
+- Workspace usage is available at `GET /api/v1/usage` and reports the active
+  plan, run limit, used runs, and remaining runs for billing UI/webhooks.
 - Provide audit events and deletion controls for user data and artifacts.
 - Drain workers and close database/Redis connections during `SIGTERM` and `SIGINT`
   so rolling restarts do not interrupt active jobs abruptly.
@@ -483,6 +485,7 @@ cloud deployment is called production-ready.
 - [x] Persist users, workspaces, memberships, and revokable API key records.
 - [x] Add password-based registration and login sessions.
 - [x] Enforce a configurable free-plan run quota per billing period.
+- [x] Expose workspace usage summary for billing and plan enforcement.
 - [ ] AI extraction with usage/cost controls.
 - [x] Queue retries, exponential backoff, graceful worker shutdown, and exports.
 - [ ] Schedules, cancellation, and live logs.
