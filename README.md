@@ -447,6 +447,8 @@ cloud deployment is called production-ready.
   authentication plus API-key lifecycle actions without storing secrets.
 - Workspace usage is available at `GET /api/v1/usage` and reports the active
   plan, run limit, used runs, and remaining runs for billing UI/webhooks.
+- Workspace owners can delete all workspace data with `DELETE /api/v1/workspace`
+  after exact workspace-ID confirmation. The destructive action is audit logged.
 - Provide audit events and deletion controls for user data and artifacts.
 - Drain workers and close database/Redis connections during `SIGTERM` and `SIGINT`
   so rolling restarts do not interrupt active jobs abruptly.
@@ -481,7 +483,8 @@ cloud deployment is called production-ready.
 
 - [x] Organizations/workspaces, roles, API keys, and billing limits foundation.
 - [x] Workspace-scoped audit log for auth and API-key lifecycle actions.
-- [ ] Retention/deletion controls.
+- [x] Owner-confirmed workspace deletion with audit logging.
+- [ ] Automated retention policies and scheduled deletion.
 - [x] Persist users, workspaces, memberships, and revokable API key records.
 - [x] Add password-based registration and login sessions.
 - [x] Enforce a configurable free-plan run quota per billing period.
