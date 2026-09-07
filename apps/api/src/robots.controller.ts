@@ -144,6 +144,26 @@ export class RobotsController {
     }));
   }
 
+  @Delete(':id/runs/:runId')
+  async cancelRun(@Param('id') robotId: string, @Param('runId') runId: string, @Req() request?: RequestWithUser): Promise<{ cancelled: boolean }> {
+    const run = await this.prisma.run.findFirst({
+      where: {
+        id: runId,
+        robotId,
+        status: { in: ['queued', 'running'] },
+        ...(request?.user?.workspaceId ? { robot: { workspaceId: request.user.workspaceId } } : {}),
+      },
+    });
+    if (!run) throw new NotFoundException('Active run not found.');
+
+    await this.queueClient.removeJob(runId).catch(() => false);
+    await this.prisma.run.update({
+      where: { id: runId },
+      data: { status: 'cancelled', finishedAt: new Date(), result: 'Run cancelled by user.' },
+    });
+    return { cancelled: true };
+  }
+
   @Get(':id/runs/export.json')
   @Header('Content-Disposition', 'attachment; filename="openscrape-runs.json"')
   async exportJson(@Param('id') robotId: string, @Req() request: RequestWithUser): Promise<RunStatus[]> {

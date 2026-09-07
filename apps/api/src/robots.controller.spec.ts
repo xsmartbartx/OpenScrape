@@ -8,7 +8,7 @@ describe('RobotsController', () => {
       run: { count: jest.fn().mockResolvedValue(0), create: jest.fn().mockResolvedValue({ id: 'run-123', robotId: 'robot-1', url: 'https://example.com', status: 'queued', startedAt: new Date(), result: 'Job accepted and queued for processing.' }), update: runUpdate },
       robot: { findFirst: jest.fn().mockResolvedValue({ id: 'robot-1', runLimit: 100, periodStart: new Date() }), create: jest.fn() },
     };
-    const controller = new RobotsController({ addJob } as any, repo as any);
+    const controller = new RobotsController({ addJob, removeJob: jest.fn() } as any, repo as any);
 
     await expect(controller.createRun('robot-1', { url: 'https://example.com' })).rejects.toThrow('Redis unavailable');
     expect(runUpdate).toHaveBeenCalledWith({
@@ -23,7 +23,7 @@ describe('RobotsController', () => {
       run: { count: jest.fn().mockResolvedValue(100) },
       robot: { findFirst: jest.fn().mockResolvedValue({ id: 'robot-1', runLimit: 100, periodStart: new Date() }) },
     };
-    const controller = new RobotsController({ addJob } as any, repo as any);
+    const controller = new RobotsController({ addJob, removeJob: jest.fn() } as any, repo as any);
 
     await expect(controller.createRun('robot-1', { url: 'https://example.com' })).rejects.toThrow(
       'Robot run limit reached for the current plan.',
@@ -33,7 +33,7 @@ describe('RobotsController', () => {
 
   it('rejects private network targets before queueing', async () => {
     const addJob = jest.fn();
-    const controller = new RobotsController({ addJob } as any, {} as any);
+    const controller = new RobotsController({ addJob, removeJob: jest.fn() } as any, {} as any);
 
     await expect(controller.createRun('robot-1', { url: 'http://127.0.0.1:8080/admin' })).rejects.toThrow(
       'Private and local network targets are not allowed.',
@@ -63,7 +63,7 @@ describe('RobotsController', () => {
       },
     };
 
-    const controller = new RobotsController({ addJob } as any, repo as any);
+    const controller = new RobotsController({ addJob, removeJob: jest.fn() } as any, repo as any);
 
     const result = await controller.createRun('robot-1', { url: 'https://example.com' });
 
