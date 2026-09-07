@@ -1,6 +1,22 @@
 import { RobotsController } from './robots.controller';
 
 describe('RobotsController', () => {
+  it('cancels an active run in the current workspace', async () => {
+    const removeJob = jest.fn().mockResolvedValue(true);
+    const update = jest.fn().mockResolvedValue(undefined);
+    const repo = {
+      run: { findFirst: jest.fn().mockResolvedValue({ id: 'run-1' }), update },
+    };
+    const controller = new RobotsController({ addJob: jest.fn(), removeJob } as any, repo as any);
+
+    await expect(controller.cancelRun('robot-1', 'run-1', { user: { workspaceId: 'workspace-1' } } as any)).resolves.toEqual({ cancelled: true });
+    expect(removeJob).toHaveBeenCalledWith('run-1');
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'run-1' },
+      data: expect.objectContaining({ status: 'cancelled' }),
+    }));
+  });
+
   it('marks a run failed when Redis rejects the job', async () => {
     const addJob = jest.fn().mockRejectedValue(new Error('Redis unavailable'));
     const runUpdate = jest.fn().mockResolvedValue(undefined);

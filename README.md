@@ -447,6 +447,9 @@ cloud deployment is called production-ready.
   authentication plus API-key lifecycle actions without storing secrets.
 - Workspace usage is available at `GET /api/v1/usage` and reports the active
   plan, run limit, used runs, and remaining runs for billing UI/webhooks.
+- Active runs can be cancelled with `DELETE /api/v1/robots/:id/runs/:runId`;
+  cancellation is workspace-scoped and prevents late worker completion from
+  overwriting the cancelled status.
 - Workspace owners can delete all workspace data with `DELETE /api/v1/workspace`
   after exact workspace-ID confirmation. The destructive action is audit logged.
 - Workspace owners can remove old HTML/screenshots with
@@ -501,7 +504,8 @@ cloud deployment is called production-ready.
 - [x] Expose workspace usage summary for billing and plan enforcement.
 - [ ] AI extraction with usage/cost controls.
 - [x] Queue retries, exponential backoff, graceful worker shutdown, and exports.
-- [ ] Schedules, cancellation, and live logs.
+- [x] Run cancellation for queued/running jobs.
+- [ ] Schedules and live logs.
 - [ ] SDK and CLI.
 - [x] Liveness/readiness, rate limits, security headers, SSRF controls, and deployment documentation.
 - [ ] Centralized observability, backups, restore drills, and production infrastructure.
