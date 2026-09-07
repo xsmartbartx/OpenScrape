@@ -5,6 +5,7 @@ import { Queue } from 'bullmq';
 import { AppController } from './app.controller';
 import { ApiKeyGuard } from './api-key.guard';
 import { ApiKeysController } from './api-keys.controller';
+import { ArtifactRetentionService } from './artifact-retention.service';
 import { AuditController } from './audit.controller';
 import { AuditService } from './audit.service';
 import { AuthController } from './auth.controller';
@@ -38,6 +39,7 @@ const apiRateLimit = Number(process.env.API_RATE_LIMIT ?? 60);
   providers: [
     PrismaService,
     AuditService,
+    ArtifactRetentionService,
     HealthService,
     SessionCleanupService,
     {
