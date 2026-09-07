@@ -88,8 +88,8 @@ const worker = new Worker(
     };
 
     if (jobId !== 'unknown') {
-      await prisma.run.update({
-        where: { id: jobId },
+      await prisma.run.updateMany({
+        where: { id: jobId, status: { not: 'cancelled' } },
         data: {
           status: 'success',
           finishedAt: new Date(),
@@ -115,8 +115,8 @@ worker.on('failed', async (job, error) => {
   console.error(`Failed job ${jobId}`, error);
 
   if (jobId !== 'unknown') {
-    await prisma.run.update({
-      where: { id: jobId },
+    await prisma.run.updateMany({
+      where: { id: jobId, status: { not: 'cancelled' } },
       data: {
         status: 'failed',
         finishedAt: new Date(),

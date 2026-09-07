@@ -209,6 +209,16 @@ export default function HomePage() {
     }
   };
 
+  const onCancelRun = async (robotId: string, runId: string) => {
+    try {
+      const response = await apiFetch(`/robots/${robotId}/runs/${runId}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Could not cancel run.');
+      await fetchRuns(robotId);
+    } catch (cancelError) {
+      setError(cancelError instanceof Error ? cancelError.message : 'Could not cancel run.');
+    }
+  };
+
   return (
     <main className="page-shell">
       <header className="hero">
@@ -337,6 +347,9 @@ export default function HomePage() {
                 <div className="meta">
                   <span>{run.status}</span>
                   <small>{new Date(run.startedAt).toLocaleString()}</small>
+                  {run.status === 'queued' || run.status === 'running' ? (
+                    <button type="button" onClick={() => void onCancelRun(run.robotId, run.id)}>Cancel</button>
+                  ) : null}
                   {run.status === 'success' ? (
                     <>
                       <button type="button" onClick={() => void openArtifact(`/robots/${run.robotId}/runs/${run.id}/html`)}>HTML</button>
