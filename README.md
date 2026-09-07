@@ -387,6 +387,17 @@ npx pnpm --dir apps/api db:migrate
 Use `db:push` only for disposable local development databases; it is not a
 production migration workflow.
 
+Create and restore PostgreSQL backups with:
+
+```bash
+npm run db:backup
+CONFIRM_RESTORE=yes npm run db:restore -- ./backups/openscrape-YYYYMMDDTHHMMSSZ.sql.gz
+```
+
+Backups must be stored outside the application host or on encrypted durable
+storage. A restore drill should be performed regularly against an isolated
+database and followed by the readiness and smoke checks.
+
 The initial migration is a baseline for a new database. If a database was
 previously created with `db:push`, take a backup, compare it with the migration,
 and mark the baseline as applied with Prisma's `migrate resolve` procedure before
