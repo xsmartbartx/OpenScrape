@@ -1,9 +1,10 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 
 @Injectable()
-export class ArtifactRetentionService implements OnModuleInit {
+export class ArtifactRetentionService implements OnModuleDestroy, OnModuleInit {
   private readonly logger = new Logger(ArtifactRetentionService.name);
+  private retentionTimer?: NodeJS.Timeout;
 
   constructor(private readonly prisma: PrismaService) {}
 
@@ -17,6 +18,20 @@ export class ArtifactRetentionService implements OnModuleInit {
     } catch (error) {
       this.logger.warn(`Artifact retention skipped: ${error instanceof Error ? error.message : 'database unavailable'}`);
     }
+
+    const intervalMs = Number(process.env.ARTIFACT_RETENTION_INTERVAL_MS ?? 0);
+    if (Number.isInteger(intervalMs) && intervalMs > 0) {
+      this.retentionTimer = setInterval(() => {
+        void this.removeOlderThan(configuredDays)
+          .then((count) => this.logger.log(`Scheduled artifact retention removed artifacts from ${count} run(s).`))
+          .catch((error: unknown) => this.logger.warn(`Scheduled artifact retention skipped: ${error instanceof Error ? error.message : 'database unavailable'}`));
+      }, intervalMs);
+      this.retentionTimer.unref();
+    }
+  }
+
+  onModuleDestroy() {
+    if (this.retentionTimer) clearInterval(this.retentionTimer);
   }
 
   async removeOlderThan(olderThanDays: number): Promise<number> {
