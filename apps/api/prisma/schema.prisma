@@ -37,6 +37,7 @@ model Workspace {
   apiKeys     ApiKey[]
   robots      Robot[]
   auditEvents AuditEvent[]
+  schedules   Schedule[]
 }
 
 model Membership {
@@ -92,6 +93,21 @@ model Robot {
   workspaceId String?
   runs      Run[]
   workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  schedules Schedule[]
+}
+
+model Schedule {
+  id          String    @id
+  workspaceId String
+  robotId     String
+  intervalMs  Int
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  robot       Robot     @relation(fields: [robotId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, active])
 }
 
 model Run {

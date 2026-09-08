@@ -78,6 +78,19 @@ const apiRateLimit = Number(process.env.API_RATE_LIMIT ?? 60);
           await job.remove();
           return true;
         },
+        upsertSchedule: async (scheduleId: string, robotId: string, intervalMs: number, active: boolean) => {
+          const repeatable = `schedule:${scheduleId}`;
+          if (!active) {
+            await queue.removeRepeatable('scheduled-scrape', { every: intervalMs, jobId: repeatable });
+            return;
+          }
+          await queue.add('scheduled-scrape', { robotId }, {
+            jobId: repeatable,
+            repeat: { every: intervalMs },
+            removeOnComplete: 100,
+            removeOnFail: 100,
+          });
+        },
       }),
     },
   ],
