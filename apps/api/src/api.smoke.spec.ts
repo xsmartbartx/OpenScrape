@@ -14,9 +14,10 @@ describe('API smoke', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
-    const module = await Test.createTestingModule({ controllers: [AppController, HealthController] })
-      .overrideProvider(HealthService).useValue({ checkDependencies: jest.fn().mockResolvedValue({ database: 'ok', redis: 'ok', ready: true }) })
-      .compile();
+    const module = await Test.createTestingModule({
+      controllers: [AppController, HealthController],
+      providers: [{ provide: HealthService, useValue: { checkDependencies: jest.fn().mockResolvedValue({ database: 'ok', redis: 'ok', ready: true }) } }],
+    }).compile();
 
     app = module.createNestApplication();
     app.setGlobalPrefix('api/v1');
@@ -24,7 +25,7 @@ describe('API smoke', () => {
   });
 
   afterAll(async () => {
-    await app.close();
+    if (app) await app.close();
   });
 
   it('serves liveness and readiness at the versioned API prefix', async () => {
