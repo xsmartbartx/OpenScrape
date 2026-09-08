@@ -564,6 +564,11 @@ docs/        Architecture decisions and API documentation
 See [docs/sdk.md](docs/sdk.md) for the authenticated `@openscrape/sdk` usage
 example and supported automation operations.
 
+## 21. CLI
+
+See [docs/cli.md](docs/cli.md) for the `openscrape` commands built on top of the
+SDK.
+
 The repository retains its current license. Before publishing a hosted paid
 offering, licensing for dependencies, trademarks, hosted-service terms, data
 processing, and acceptable-use rules must be reviewed explicitly.
