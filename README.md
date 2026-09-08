@@ -450,6 +450,9 @@ cloud deployment is called production-ready.
 - Active runs can be cancelled with `DELETE /api/v1/robots/:id/runs/:runId`;
   cancellation is workspace-scoped and prevents late worker completion from
   overwriting the cancelled status.
+- Run lifecycle logs are available at
+  `GET /api/v1/robots/:robotId/runs/:runId/logs`; the dashboard can display
+  queued, running, completed, failed, and cancelled events.
 - Workspace owners can create/list/delete repeatable schedules through
   `GET/POST /api/v1/schedules` and `DELETE /api/v1/schedules/:id`. Intervals are
   limited to 1 minute through 30 days and each scheduled execution creates a
@@ -510,7 +513,7 @@ cloud deployment is called production-ready.
 - [x] Queue retries, exponential backoff, graceful worker shutdown, and exports.
 - [x] Run cancellation for queued/running jobs.
 - [x] Workspace-scoped repeatable schedules with persisted runs.
-- [ ] Live logs.
+- [x] Workspace-scoped run lifecycle logs.
 - [ ] SDK and CLI.
 - [x] Liveness/readiness, rate limits, security headers, SSRF controls, and deployment documentation.
 - [ ] Centralized observability, backups, restore drills, and production infrastructure.
