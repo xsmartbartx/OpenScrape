@@ -29,8 +29,22 @@ const nextDomainRequestAt = new Map<string, number>();
 const worker = new Worker(
   'scrape',
   async (job) => {
-    const { url, robotId } = job.data as { url: string; robotId?: string };
+    const data = job.data as { url?: string; robotId?: string; scheduleId?: string };
+    let { url, robotId } = data;
     const jobId = String(job.id ?? 'unknown');
+    let runId = jobId;
+
+    if (!url && robotId) {
+      const robot = await prisma.robot.findUnique({ where: { id: robotId }, select: { startUrl: true } });
+      url = robot?.startUrl;
+      if (url) {
+        runId = `run-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        await prisma.run.create({
+          data: { id: runId, robotId, url, status: 'queued', result: 'Scheduled job accepted for processing.' },
+        });
+      }
+    }
+    if (!url) throw new Error('Scheduled job robot has no start URL.');
     console.log(`Received scrape job ${jobId} for ${url}`);
 
     const urlError = await validateResolvedUrl(url);
@@ -38,9 +52,9 @@ const worker = new Worker(
       throw new Error(urlError);
     }
 
-    if (jobId !== 'unknown') {
+    if (runId !== 'unknown') {
       await prisma.run.update({
-        where: { id: jobId },
+        where: { id: runId },
         data: { status: 'running' },
       }).catch(() => undefined);
     }
@@ -89,7 +103,7 @@ const worker = new Worker(
 
     if (jobId !== 'unknown') {
       await prisma.run.updateMany({
-        where: { id: jobId, status: { not: 'cancelled' } },
+        where: { id: runId, status: { not: 'cancelled' } },
         data: {
           status: 'success',
           finishedAt: new Date(),
@@ -116,7 +130,7 @@ worker.on('failed', async (job, error) => {
 
   if (jobId !== 'unknown') {
     await prisma.run.updateMany({
-      where: { id: jobId, status: { not: 'cancelled' } },
+    where: { id: runId, status: { not: 'cancelled' } },
       data: {
         status: 'failed',
         finishedAt: new Date(),

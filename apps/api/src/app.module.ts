@@ -15,6 +15,7 @@ import { PrismaService } from './prisma.service';
 import { RobotsController } from './robots.controller';
 import { SessionGuard } from './session.guard';
 import { SessionCleanupService } from './session-cleanup.service';
+import { SchedulesController } from './schedules.controller';
 import { UsageController } from './usage.controller';
 import { WorkspaceController } from './workspace.controller';
 
@@ -35,7 +36,7 @@ const apiRateLimit = Number(process.env.API_RATE_LIMIT ?? 60);
   imports: [
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: Number.isFinite(apiRateLimit) && apiRateLimit > 0 ? apiRateLimit : 60 }]),
   ],
-  controllers: [AppController, ApiKeysController, AuditController, AuthController, HealthController, RobotsController, UsageController, WorkspaceController],
+  controllers: [AppController, ApiKeysController, AuditController, AuthController, HealthController, RobotsController, SchedulesController, UsageController, WorkspaceController],
   providers: [
     PrismaService,
     AuditService,
@@ -84,7 +85,7 @@ const apiRateLimit = Number(process.env.API_RATE_LIMIT ?? 60);
             await queue.removeRepeatable('scheduled-scrape', { every: intervalMs, jobId: repeatable });
             return;
           }
-          await queue.add('scheduled-scrape', { robotId }, {
+          await queue.add('scheduled-scrape', { robotId, scheduleId }, {
             jobId: repeatable,
             repeat: { every: intervalMs },
             removeOnComplete: 100,
