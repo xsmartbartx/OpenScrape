@@ -78,9 +78,9 @@ function buildCssPath(element: Element): string {
     const tag = current.tagName.toLowerCase();
     const classes = Array.from(current.classList).filter(Boolean).slice(0, 2).map(escapeCss);
     let part = classes.length ? `${tag}.${classes.join('.')}` : tag;
-    const parent = current.parentElement;
+    const parent: Element | null = current.parentElement;
     if (parent) {
-      const siblings = Array.from(parent.children).filter((child) => child.tagName === current?.tagName);
+      const siblings: Element[] = Array.from(parent.children).filter((child: Element) => child.tagName === current?.tagName);
       if (siblings.length > 1) part += `:nth-of-type(${siblings.indexOf(current) + 1})`;
     }
     parts.unshift(part);

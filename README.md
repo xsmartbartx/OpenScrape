@@ -500,8 +500,8 @@ cloud deployment is called production-ready.
 
 ### Phase 2 — No-code extraction
 
-- [ ] Selector generator with ranked fallbacks.
-- [ ] Field mapping and deterministic extraction.
+- [x] Selector generator with ranked fallbacks.
+- [x] Field mapping and deterministic extraction.
 - [ ] Pagination and infinite-scroll controls.
 - [ ] Recorder session with a browser preview.
 
