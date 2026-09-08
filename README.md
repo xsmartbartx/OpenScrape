@@ -450,6 +450,10 @@ cloud deployment is called production-ready.
 - Active runs can be cancelled with `DELETE /api/v1/robots/:id/runs/:runId`;
   cancellation is workspace-scoped and prevents late worker completion from
   overwriting the cancelled status.
+- Workspace owners can create/list/delete repeatable schedules through
+  `GET/POST /api/v1/schedules` and `DELETE /api/v1/schedules/:id`. Intervals are
+  limited to 1 minute through 30 days and each scheduled execution creates a
+  normal persisted run.
 - Workspace owners can delete all workspace data with `DELETE /api/v1/workspace`
   after exact workspace-ID confirmation. The destructive action is audit logged.
 - Workspace owners can remove old HTML/screenshots with
@@ -505,7 +509,8 @@ cloud deployment is called production-ready.
 - [ ] AI extraction with usage/cost controls.
 - [x] Queue retries, exponential backoff, graceful worker shutdown, and exports.
 - [x] Run cancellation for queued/running jobs.
-- [ ] Schedules and live logs.
+- [x] Workspace-scoped repeatable schedules with persisted runs.
+- [ ] Live logs.
 - [ ] SDK and CLI.
 - [x] Liveness/readiness, rate limits, security headers, SSRF controls, and deployment documentation.
 - [ ] Centralized observability, backups, restore drills, and production infrastructure.
