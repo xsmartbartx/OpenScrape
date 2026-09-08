@@ -522,7 +522,7 @@ cloud deployment is called production-ready.
 - [x] Run cancellation for queued/running jobs.
 - [x] Workspace-scoped repeatable schedules with persisted runs.
 - [x] Workspace-scoped run lifecycle logs.
-- [ ] SDK and CLI.
+- [x] TypeScript SDK and compiled CLI foundation.
 - [x] Liveness/readiness, rate limits, security headers, SSRF controls, and deployment documentation.
 - [x] Workspace operational metrics foundation.
 - [ ] Centralized observability, backups, restore drills, and production infrastructure.
