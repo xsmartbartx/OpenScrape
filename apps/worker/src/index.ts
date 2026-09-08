@@ -57,6 +57,9 @@ const worker = new Worker(
         where: { id: runId },
         data: { status: 'running' },
       }).catch(() => undefined);
+      await prisma.runLog.create({
+        data: { id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, runId, message: 'Worker started processing.' },
+      }).catch(() => undefined);
     }
 
     if (respectRobots) {
@@ -116,6 +119,9 @@ const worker = new Worker(
           screenshot,
         },
       }).catch(() => undefined);
+      await prisma.runLog.create({
+        data: { id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, runId, message: 'Run completed successfully.' },
+      }).catch(() => undefined);
     }
 
     return result;
@@ -140,6 +146,10 @@ worker.on('failed', async (job, error) => {
         finishedAt: new Date(),
         result: error instanceof Error ? error.message : 'Unknown worker error',
       },
+    }).catch(() => undefined);
+    const failedRunId = failedRun?.id ?? jobId;
+    await prisma.runLog.create({
+      data: { id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, runId: failedRunId, level: 'error', message: error instanceof Error ? error.message : 'Unknown worker error' },
     }).catch(() => undefined);
   }
 });

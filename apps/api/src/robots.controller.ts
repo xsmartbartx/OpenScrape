@@ -101,6 +101,9 @@ export class RobotsController {
         result: 'Job accepted and queued for processing.',
       },
     });
+    await this.prisma.runLog.create({
+      data: { id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, runId: run.id, message: 'Run queued.' },
+    });
 
     try {
       await this.queueClient.addJob(body.url, robotId, run.id);
@@ -160,6 +163,9 @@ export class RobotsController {
     await this.prisma.run.update({
       where: { id: runId },
       data: { status: 'cancelled', finishedAt: new Date(), result: 'Run cancelled by user.' },
+    });
+    await this.prisma.runLog.create({
+      data: { id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, runId, level: 'warn', message: 'Run cancelled by user.' },
     });
     return { cancelled: true };
   }

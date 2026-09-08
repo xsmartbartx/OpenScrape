@@ -121,4 +121,16 @@ model Run {
   html      String?   @db.Text
   screenshot Bytes?
   robot     Robot     @relation(fields: [robotId], references: [id])
+  logs      RunLog[]
+}
+
+model RunLog {
+  id        String   @id
+  runId     String
+  level     String   @default("info")
+  message   String
+  createdAt DateTime @default(now())
+  run       Run      @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([runId, createdAt])
 }
