@@ -496,7 +496,7 @@ cloud deployment is called production-ready.
 - [x] Worker fetches a page with Playwright and persists a result.
 - [x] Next.js dashboard creates a robot and displays run status/results.
 - [x] Automated API unit tests, HTTP smoke test, live vertical-slice verification, and CI validation with PostgreSQL/Redis services.
-- [ ] Automated browser E2E tests.
+- [x] Automated browser E2E tests with Playwright.
 
 ### Phase 2 — No-code extraction
 
