@@ -447,6 +447,8 @@ cloud deployment is called production-ready.
   authentication plus API-key lifecycle actions without storing secrets.
 - Workspace usage is available at `GET /api/v1/usage` and reports the active
   plan, run limit, used runs, and remaining runs for billing UI/webhooks.
+- Operational workspace metrics are available at `GET /api/v1/metrics/workspace`
+  with robot count, active schedules, and run status aggregates.
 - Active runs can be cancelled with `DELETE /api/v1/robots/:id/runs/:runId`;
   cancellation is workspace-scoped and prevents late worker completion from
   overwriting the cancelled status.
@@ -516,6 +518,7 @@ cloud deployment is called production-ready.
 - [x] Workspace-scoped run lifecycle logs.
 - [ ] SDK and CLI.
 - [x] Liveness/readiness, rate limits, security headers, SSRF controls, and deployment documentation.
+- [x] Workspace operational metrics foundation.
 - [ ] Centralized observability, backups, restore drills, and production infrastructure.
 - [ ] Stripe/Paddle checkout, subscription webhooks, plan synchronization, and invoices.
 
