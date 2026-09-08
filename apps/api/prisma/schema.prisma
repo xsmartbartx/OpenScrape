@@ -38,6 +38,33 @@ model Workspace {
   robots      Robot[]
   auditEvents AuditEvent[]
   schedules   Schedule[]
+  subscription Subscription?
+}
+
+model Subscription {
+  id                   String   @id
+  workspaceId          String   @unique
+  provider             String
+  providerCustomerId   String?
+  providerSubscriptionId String? @unique
+  plan                 String
+  status               String
+  currentPeriodEnd     DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  workspace            Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model BillingEvent {
+  id          String   @id
+  provider    String
+  eventId     String
+  eventType   String
+  receivedAt  DateTime @default(now())
+  processedAt DateTime?
+  payloadHash String
+
+  @@unique([provider, eventId])
 }
 
 model Membership {

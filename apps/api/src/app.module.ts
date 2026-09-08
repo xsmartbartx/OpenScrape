@@ -5,6 +5,7 @@ import { Queue } from 'bullmq';
 import { AppController } from './app.controller';
 import { ApiKeyGuard } from './api-key.guard';
 import { ApiKeysController } from './api-keys.controller';
+import { BillingController } from './billing.controller';
 import { ArtifactRetentionService } from './artifact-retention.service';
 import { AuditController } from './audit.controller';
 import { AuditService } from './audit.service';
@@ -38,7 +39,7 @@ const apiRateLimit = Number(process.env.API_RATE_LIMIT ?? 60);
   imports: [
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: Number.isFinite(apiRateLimit) && apiRateLimit > 0 ? apiRateLimit : 60 }]),
   ],
-  controllers: [AppController, ApiKeysController, AuditController, AuthController, HealthController, MetricsController, RobotsController, RunLogsController, SchedulesController, UsageController, WorkspaceController],
+  controllers: [AppController, ApiKeysController, AuditController, AuthController, BillingController, HealthController, MetricsController, RobotsController, RunLogsController, SchedulesController, UsageController, WorkspaceController],
   providers: [
     PrismaService,
     AuditService,
