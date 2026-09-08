@@ -559,6 +559,11 @@ docs/        Architecture decisions and API documentation
 
 ## 19. License & Contribution
 
+## 20. TypeScript SDK
+
+See [docs/sdk.md](docs/sdk.md) for the authenticated `@openscrape/sdk` usage
+example and supported automation operations.
+
 The repository retains its current license. Before publishing a hosted paid
 offering, licensing for dependencies, trademarks, hosted-service terms, data
 processing, and acceptable-use rules must be reviewed explicitly.
