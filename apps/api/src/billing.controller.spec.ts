@@ -11,6 +11,7 @@ describe('BillingController', () => {
     const prisma = {
       billingEvent: { findUnique: jest.fn().mockResolvedValue(null), create: jest.fn() },
       subscription: { upsert: jest.fn() },
+      workspace: { update: jest.fn() },
     };
     const controller = new BillingController(prisma as any);
     const request = { params: { provider: 'stripe' }, rawBody: Buffer.from(body) };

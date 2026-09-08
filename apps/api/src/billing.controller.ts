@@ -74,6 +74,10 @@ export class BillingController {
         currentPeriodEnd: payload.currentPeriodEnd ? new Date(payload.currentPeriodEnd) : undefined,
       },
     });
+    await this.prisma.workspace.update({
+      where: { id: payload.workspaceId },
+      data: { plan: payload.plan ?? 'free' },
+    });
 
     return { accepted: true, duplicate: false };
   }

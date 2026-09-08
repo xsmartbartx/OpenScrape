@@ -447,6 +447,10 @@ cloud deployment is called production-ready.
   authentication plus API-key lifecycle actions without storing secrets.
 - Workspace usage is available at `GET /api/v1/usage` and reports the active
   plan, run limit, used runs, and remaining runs for billing UI/webhooks.
+- Provider-neutral billing webhooks are available at
+  `POST /api/v1/billing/webhook/:provider`; they require HMAC verification,
+  reject stale timestamps, deduplicate provider event IDs, and synchronize the
+  workspace plan/subscription state. Set `BILLING_WEBHOOK_SECRET` before use.
 - Operational workspace metrics are available at `GET /api/v1/metrics/workspace`
   with robot count, active schedules, and run status aggregates.
 - The authenticated dashboard displays these metrics as an operational workspace
@@ -523,6 +527,8 @@ cloud deployment is called production-ready.
 - [x] Workspace operational metrics foundation.
 - [ ] Centralized observability, backups, restore drills, and production infrastructure.
 - [ ] Stripe/Paddle checkout, subscription webhooks, plan synchronization, and invoices.
+- [x] Provider-neutral signed billing webhook and subscription state foundation.
+- [ ] Stripe/Paddle checkout, provider adapters, invoices, and tax handling.
 
 ### Definition of Done for MVP
 
