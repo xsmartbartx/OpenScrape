@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: openscrape
+          POSTGRES_PASSWORD: openscrape-ci
+          POSTGRES_DB: openscrape
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U openscrape -d openscrape"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://openscrape:openscrape-ci@localhost:5432/openscrape
+      REDIS_URL: redis://localhost:6379
+      API_KEYS_REQUIRED: 'false'
+      AUTH_REQUIRED: 'false'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Enable pnpm
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate Prisma schema
+        run: pnpm --filter @openscrape/api exec prisma validate --schema prisma/schema.prisma
+
+      - name: Apply CI schema
+        run: pnpm --filter @openscrape/api exec prisma db push --schema prisma/schema.prisma
+
+      - name: API tests
+        run: pnpm --filter @openscrape/api exec jest --runInBand
+
+      - name: Typecheck
+        run: pnpm -r typecheck
+
+      - name: Build API and worker
+        run: pnpm --filter @openscrape/api build && pnpm --filter @openscrape/worker build
+
+      - name: Build web
+        run: pnpm --filter @openscrape/web build
