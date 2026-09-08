@@ -130,6 +130,31 @@ button.selected { background: var(--coral); }
   font-size: 0.9rem;
 }
 
+.metrics-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1px;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--line);
+  background: var(--line);
+}
+
+.metrics-strip div {
+  display: grid;
+  gap: 0.25rem;
+  background: var(--panel);
+  padding: 0.9rem 1rem;
+}
+
+.metrics-strip b {
+  font-size: 1.5rem;
+}
+
+.metrics-strip span {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
 .key-panel {
   margin-bottom: 1.5rem;
 }

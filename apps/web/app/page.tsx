@@ -34,6 +34,12 @@ type ApiKey = {
 
 type RunLog = { id: string; level: string; message: string; createdAt: string };
 
+type WorkspaceMetrics = {
+  robots: number;
+  activeSchedules: number;
+  runs: { queued: number; running: number; success: number; failed: number; cancelled: number };
+};
+
 function parseResult(result?: string): ScrapeResult | undefined {
   if (!result) return undefined;
 
@@ -67,6 +73,7 @@ export default function HomePage() {
   const [newSecret, setNewSecret] = useState<string>();
   const [expandedRunId, setExpandedRunId] = useState<string>();
   const [runLogs, setRunLogs] = useState<RunLog[]>([]);
+  const [metrics, setMetrics] = useState<WorkspaceMetrics>();
 
   const apiFetch = (path: string, options: RequestInit = {}) => {
     const headers = new Headers(options.headers);
@@ -103,7 +110,14 @@ export default function HomePage() {
     if (!token) return;
     void fetchRobots().catch((loadError: Error) => setError(loadError.message));
     void loadApiKeys().catch((loadError: Error) => setError(loadError.message));
+    void loadMetrics().catch((loadError: Error) => setError(loadError.message));
   }, [token]);
+
+  const loadMetrics = async () => {
+    const response = await apiFetch('/metrics/workspace');
+    if (!response.ok) throw new Error('Could not load workspace metrics.');
+    setMetrics(await response.json());
+  };
 
   const loadApiKeys = async () => {
     const response = await apiFetch('/api-keys');
@@ -214,6 +228,7 @@ export default function HomePage() {
       });
       if (!response.ok) throw new Error('Could not start robot.');
       await fetchRuns(robotId);
+      await loadMetrics();
     } catch (runError) {
       setError(runError instanceof Error ? runError.message : 'Unexpected error.');
     }
@@ -259,6 +274,13 @@ export default function HomePage() {
 
       {token ? <>
       <div className="session-bar"><span>Authenticated workspace</span><button type="button" onClick={() => void logout()}>Sign out</button></div>
+      {metrics ? <section className="metrics-strip" aria-label="Workspace metrics">
+        <div><b>{metrics.robots}</b><span>Robots</span></div>
+        <div><b>{metrics.activeSchedules}</b><span>Schedules</span></div>
+        <div><b>{metrics.runs.running + metrics.runs.queued}</b><span>Active runs</span></div>
+        <div><b>{metrics.runs.success}</b><span>Successful</span></div>
+        <div><b>{metrics.runs.failed}</b><span>Failed</span></div>
+      </section> : null}
       <section className="card key-panel">
         <div className="panel-heading"><h2>API keys</h2><span className="muted">Secrets are shown once</span></div>
         <div className="key-create">
