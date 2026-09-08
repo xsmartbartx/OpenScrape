@@ -449,6 +449,8 @@ cloud deployment is called production-ready.
   plan, run limit, used runs, and remaining runs for billing UI/webhooks.
 - Operational workspace metrics are available at `GET /api/v1/metrics/workspace`
   with robot count, active schedules, and run status aggregates.
+- The authenticated dashboard displays these metrics as an operational workspace
+  summary and refreshes them after new runs.
 - Active runs can be cancelled with `DELETE /api/v1/robots/:id/runs/:runId`;
   cancellation is workspace-scoped and prevents late worker completion from
   overwriting the cancelled status.
