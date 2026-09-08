@@ -1,6 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import request from 'supertest';
+import request = require('supertest');
+import type { Response } from 'supertest';
 import { AppModule } from './app.module';
 import { ArtifactRetentionService } from './artifact-retention.service';
 import { HealthService } from './health.service';
@@ -32,11 +33,11 @@ describe('API smoke', () => {
     await request(app.getHttpServer())
       .get('/api/v1/health')
       .expect(200)
-      .expect(({ body }) => expect(body).toMatchObject({ status: 'ok', service: 'api' }));
+      .expect((response: Response) => expect(response.body).toMatchObject({ status: 'ok', service: 'api' }));
 
     await request(app.getHttpServer())
       .get('/api/v1/health/ready')
       .expect(200)
-      .expect(({ body }) => expect(body).toMatchObject({ status: 'ready', database: 'ok', redis: 'ok' }));
+      .expect((response: Response) => expect(response.body).toMatchObject({ status: 'ready', database: 'ok', redis: 'ok' }));
   });
 });
