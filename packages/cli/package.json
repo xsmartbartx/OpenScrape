@@ -3,9 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "bin": {
-    "openscrape": "src/index.ts"
+    "openscrape": "dist/index.js"
   },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
