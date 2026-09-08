@@ -129,8 +129,12 @@ worker.on('failed', async (job, error) => {
   console.error(`Failed job ${jobId}`, error);
 
   if (jobId !== 'unknown') {
+    const jobData = job?.data as { robotId?: string } | undefined;
+    const failedRun = jobData?.robotId
+      ? await prisma.run.findFirst({ where: { robotId: jobData.robotId, status: { in: ['queued', 'running'] } }, orderBy: { startedAt: 'desc' } })
+      : undefined;
     await prisma.run.updateMany({
-    where: { id: runId, status: { not: 'cancelled' } },
+      where: { id: failedRun?.id ?? jobId, status: { not: 'cancelled' } },
       data: {
         status: 'failed',
         finishedAt: new Date(),
