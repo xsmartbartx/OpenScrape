@@ -146,6 +146,22 @@ importers:
         specifier: ^5.9.2
         version: 5.9.3
 
+  packages/sdk:
+    dependencies:
+      '@openscrape/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+    devDependencies:
+      '@types/jest':
+        specifier: ^30.0.0
+        version: 30.0.0
+      jest:
+        specifier: ^29.7.0
+        version: 29.7.0(@types/node@24.13.3)
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+
 packages:
 
   '@angular-devkit/core@19.2.24':
