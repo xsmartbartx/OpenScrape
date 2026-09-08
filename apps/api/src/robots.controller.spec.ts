@@ -6,6 +6,7 @@ describe('RobotsController', () => {
     const update = jest.fn().mockResolvedValue(undefined);
     const repo = {
       run: { findFirst: jest.fn().mockResolvedValue({ id: 'run-1' }), update },
+      runLog: { create: jest.fn().mockResolvedValue(undefined) },
     };
     const controller = new RobotsController({ addJob: jest.fn(), removeJob } as any, repo as any);
 
