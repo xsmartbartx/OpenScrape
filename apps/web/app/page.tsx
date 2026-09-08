@@ -32,6 +32,8 @@ type ApiKey = {
   revokedAt?: string;
 };
 
+type RunLog = { id: string; level: string; message: string; createdAt: string };
+
 function parseResult(result?: string): ScrapeResult | undefined {
   if (!result) return undefined;
 
@@ -63,6 +65,8 @@ export default function HomePage() {
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [newKeyName, setNewKeyName] = useState('');
   const [newSecret, setNewSecret] = useState<string>();
+  const [expandedRunId, setExpandedRunId] = useState<string>();
+  const [runLogs, setRunLogs] = useState<RunLog[]>([]);
 
   const apiFetch = (path: string, options: RequestInit = {}) => {
     const headers = new Headers(options.headers);
@@ -83,6 +87,12 @@ export default function HomePage() {
     if (!response.ok) throw new Error('Could not load run history.');
     const data = await response.json();
     setRuns(data);
+  };
+
+  const fetchLogs = async (robotId: string, runId: string) => {
+    const response = await apiFetch(`/robots/${robotId}/runs/${runId}/logs`);
+    if (!response.ok) throw new Error('Could not load run logs.');
+    setRunLogs(await response.json());
   };
 
   useEffect(() => {
@@ -350,6 +360,7 @@ export default function HomePage() {
                   {run.status === 'queued' || run.status === 'running' ? (
                     <button type="button" onClick={() => void onCancelRun(run.robotId, run.id)}>Cancel</button>
                   ) : null}
+                  <button type="button" onClick={() => { setExpandedRunId(run.id); void fetchLogs(run.robotId, run.id).catch((logError: Error) => setError(logError.message)); }}>Logs</button>
                   {run.status === 'success' ? (
                     <>
                       <button type="button" onClick={() => void openArtifact(`/robots/${run.robotId}/runs/${run.id}/html`)}>HTML</button>
@@ -357,6 +368,7 @@ export default function HomePage() {
                     </>
                   ) : null}
                 </div>
+                {expandedRunId === run.id ? <div className="run-logs">{runLogs.map((log) => <small key={log.id}><b>{log.level}</b> {new Date(log.createdAt).toLocaleTimeString()} {log.message}</small>)}</div> : null}
               </li>
             ))}
           </ul>

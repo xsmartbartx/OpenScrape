@@ -208,6 +208,16 @@ button.selected { background: var(--coral); }
   line-height: 1.45;
 }
 
+.run-logs {
+  display: grid;
+  gap: 0.25rem;
+  grid-column: 1 / -1;
+  margin-top: 0.75rem;
+  border-top: 1px solid var(--line);
+  padding-top: 0.65rem;
+  color: var(--muted);
+}
+
 .robot-list li div,
 .run-list li div {
   display: grid;
