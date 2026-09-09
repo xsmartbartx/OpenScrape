@@ -502,7 +502,7 @@ cloud deployment is called production-ready.
 
 - [x] Selector generator with ranked fallbacks.
 - [x] Field mapping and deterministic extraction.
-- [ ] Pagination and infinite-scroll controls.
+- [x] Pagination and infinite-scroll controls.
 - [ ] Recorder session with a browser preview.
 
 ### Phase 3 — Production product
