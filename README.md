@@ -503,6 +503,7 @@ cloud deployment is called production-ready.
 - [x] Selector generator with ranked fallbacks.
 - [x] Field mapping and deterministic extraction.
 - [x] Pagination and infinite-scroll controls.
+- [x] Persisted structured results with paginated JSON/CSV exports.
 - [x] Persisted recorder step model and workspace-scoped step API foundation.
 - [x] Sanitized captured-HTML recorder preview with click-to-ranked-selector steps.
 - [x] Playwright replay for recorded `goto`, `click`, `type/fill`, and `wait` steps.
