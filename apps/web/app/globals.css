@@ -159,6 +159,24 @@ button.selected { background: var(--coral); }
   margin-bottom: 1.5rem;
 }
 
+.recorder-panel {
+  margin-bottom: 1.5rem;
+}
+
+.preview-frame {
+  max-height: 36rem;
+  overflow: auto;
+  border: 1px solid var(--line);
+  background: white;
+  padding: 1rem;
+}
+
+.preview-frame.recording {
+  cursor: crosshair;
+  outline: 2px dashed var(--coral);
+  outline-offset: -5px;
+}
+
 .muted,
 .key-list small {
   color: var(--muted);

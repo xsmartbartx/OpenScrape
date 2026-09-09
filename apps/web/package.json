@@ -10,6 +10,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@openscrape/extractor": "workspace:*",
+    "dompurify": "^3.2.6",
     "next": "^15.5.2",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"

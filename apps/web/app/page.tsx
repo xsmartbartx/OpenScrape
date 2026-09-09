@@ -1,6 +1,8 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
+import DOMPurify from 'dompurify';
+import { generateSelectorCandidates } from '@openscrape/extractor';
 
 type Robot = {
   id: string;
@@ -73,6 +75,9 @@ export default function HomePage() {
   const [newSecret, setNewSecret] = useState<string>();
   const [expandedRunId, setExpandedRunId] = useState<string>();
   const [runLogs, setRunLogs] = useState<RunLog[]>([]);
+  const [previewHtml, setPreviewHtml] = useState<string>();
+  const [previewRobotId, setPreviewRobotId] = useState<string>();
+  const [recording, setRecording] = useState(false);
   const [metrics, setMetrics] = useState<WorkspaceMetrics>();
 
   const apiFetch = (path: string, options: RequestInit = {}) => {
@@ -100,6 +105,33 @@ export default function HomePage() {
     const response = await apiFetch(`/robots/${robotId}/runs/${runId}/logs`);
     if (!response.ok) throw new Error('Could not load run logs.');
     setRunLogs(await response.json());
+  };
+
+  const loadPreview = async (robotId: string) => {
+    const response = await apiFetch(`/robots/${robotId}/preview`);
+    if (!response.ok) throw new Error('No captured HTML is available for this robot.');
+    const html = await response.text();
+    setPreviewHtml(DOMPurify.sanitize(html, { FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form'] }));
+    setPreviewRobotId(robotId);
+    setRecording(true);
+  };
+
+  const recordElement = async (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!recording || !previewRobotId) return;
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const element = target.closest('a,button,input,select,textarea,img,h1,h2,h3,h4,p,li,td,th') ?? target;
+    const candidates = generateSelectorCandidates(element).map(({ kind, value, score, reason }) => ({ kind, value, score, reason }));
+    const action = ['a', 'button'].includes(element.tagName.toLowerCase()) ? 'click' : 'extract';
+    const response = await apiFetch(`/robots/${previewRobotId}/steps`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, selector: { candidates }, value: element.textContent?.trim() }),
+    });
+    if (!response.ok) throw new Error('Could not save recorded step.');
+    setError(undefined);
   };
 
   useEffect(() => {
@@ -340,7 +372,7 @@ export default function HomePage() {
                     <span>{robot.type}</span>
                   </div>
                   <div className="robot-actions">
-                    <button type="button" className={selectedRobotId === robot.id ? 'selected' : ''} onClick={() => setSelectedRobotId(robot.id)}>
+                    <button type="button" className={selectedRobotId === robot.id ? 'selected' : ''} onClick={() => { setSelectedRobotId(robot.id); void loadPreview(robot.id).catch((previewError: Error) => setError(previewError.message)); }}>
                       View
                     </button>
                     <button type="button" onClick={() => onRunRobot(robot.id, robot.startUrl)}>
@@ -353,6 +385,11 @@ export default function HomePage() {
           )}
         </div>
       </section>
+      {previewHtml && previewRobotId ? <section className="card recorder-panel">
+        <div className="panel-heading"><h2>Recorder preview</h2><button type="button" onClick={() => setRecording((active) => !active)}>{recording ? 'Stop recording' : 'Record clicks'}</button></div>
+        <p className="muted">{recording ? 'Click an element to save a ranked selector step.' : 'Preview mode'}</p>
+        <div className={`preview-frame ${recording ? 'recording' : ''}`} onClick={(event) => void recordElement(event).catch((recordError: Error) => setError(recordError.message))} dangerouslySetInnerHTML={{ __html: previewHtml }} />
+      </section> : null}
 
       <section className="card run-panel">
         <div className="panel-heading">
