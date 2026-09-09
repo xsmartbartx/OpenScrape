@@ -113,6 +113,8 @@ model Robot {
   type      String
   startUrl  String
   status    String
+  aiPrompt  String?
+  aiSchema  Json?
   createdAt DateTime @default(now())
   plan      String   @default("free")
   runLimit  Int      @default(100)

@@ -4,6 +4,8 @@ export interface CreateRobotInput {
   name: string;
   type: RobotType;
   startUrl: string;
+  aiPrompt?: string;
+  aiSchema?: Record<string, unknown>;
 }
 
 export interface Robot {
@@ -12,6 +14,8 @@ export interface Robot {
   type: RobotType;
   startUrl: string;
   status: 'draft' | 'ready' | 'running' | 'failed';
+  aiPrompt?: string;
+  aiSchema?: Record<string, unknown>;
 }
 
 export interface CreateRunInput {

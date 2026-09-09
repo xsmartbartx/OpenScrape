@@ -46,6 +46,8 @@ export class RobotsController {
         startUrl: body.startUrl,
         status: 'ready',
         workspaceId: request?.user?.workspaceId,
+        ...(body.aiPrompt ? { aiPrompt: body.aiPrompt } : {}),
+        ...(body.aiSchema ? { aiSchema: body.aiSchema } : {}),
       },
     });
 
@@ -55,6 +57,8 @@ export class RobotsController {
       type: robot.type as Robot['type'],
       startUrl: robot.startUrl,
       status: robot.status as Robot['status'],
+      aiPrompt: robot.aiPrompt ?? undefined,
+      aiSchema: robot.aiSchema as Record<string, unknown> | undefined,
     };
   }
 
