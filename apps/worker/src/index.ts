@@ -66,30 +66,11 @@ const worker = new Worker(
       await assertRobotsAllowed(url);
     }
 
-    const { html, finalUrl } = await fetchPage(url);
-    let screenshot: Uint8Array<ArrayBuffer> | undefined;
-
-    try {
-      const browser = await chromium.launch({ headless: true });
-      const page = await browser.newPage({
-        viewport: { width: 1440, height: 900 },
-        userAgent,
-      });
-      await page.route('**/*', async (route) => {
-        const requestUrl = route.request().url();
-        if (await validateResolvedUrl(requestUrl)) {
-          await route.abort('blockedbyclient');
-          return;
-        }
-        await route.continue();
-      });
-      await page.goto(finalUrl, { waitUntil: 'domcontentloaded', timeout: requestTimeoutMs });
-      const screenshotBuffer = await page.screenshot({ fullPage: true, type: 'png' });
-      screenshot = Uint8Array.from(screenshotBuffer);
-      await browser.close();
-    } catch (error) {
-      console.warn(`Could not capture screenshot for ${jobId}:`, error);
-    }
+    const robot = robotId ? await prisma.robot.findUnique({ where: { id: robotId }, select: { type: true } }) : undefined;
+    const captured = robot?.type === 'recorded'
+      ? await replayRecordedRobot(url, robotId!)
+      : await capturePage(url);
+    const { html, finalUrl, screenshot } = captured;
     const result = {
       status: 'completed',
       url: finalUrl,
@@ -240,6 +221,80 @@ async function fetchPage(initialUrl: string): Promise<{ html: string; finalUrl: 
   }
 
   throw new Error(`Target exceeded the ${maxRedirects} redirect limit.`);
+}
+
+async function capturePage(initialUrl: string): Promise<{ html: string; finalUrl: string; screenshot?: Uint8Array<ArrayBuffer> }> {
+  const { html, finalUrl } = await fetchPage(initialUrl);
+  let screenshot: Uint8Array<ArrayBuffer> | undefined;
+
+  try {
+    const browser = await chromium.launch({ headless: true });
+    const page = await prepareBrowserPage(browser);
+    await page.goto(finalUrl, { waitUntil: 'domcontentloaded', timeout: requestTimeoutMs });
+    const screenshotBuffer = await page.screenshot({ fullPage: true, type: 'png' });
+    screenshot = Uint8Array.from(screenshotBuffer);
+    await browser.close();
+  } catch (error) {
+    console.warn(`Could not capture screenshot for ${finalUrl}:`, error);
+  }
+  return { html, finalUrl, screenshot };
+}
+
+async function replayRecordedRobot(initialUrl: string, robotId: string): Promise<{ html: string; finalUrl: string; screenshot?: Uint8Array<ArrayBuffer> }> {
+  const steps = await prisma.robotStep.findMany({ where: { robotId }, orderBy: { orderIndex: 'asc' } });
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await prepareBrowserPage(browser);
+    await page.goto(initialUrl, { waitUntil: 'domcontentloaded', timeout: requestTimeoutMs });
+
+    for (const step of steps) {
+      const options = (step.options ?? {}) as { timeoutMs?: number };
+      const timeout = options.timeoutMs ?? requestTimeoutMs;
+      const selector = selectRecordedSelector(step.selector);
+      if (step.action === 'goto' && step.value) {
+        const targetError = await validateResolvedUrl(step.value);
+        if (targetError) throw new Error(`Recorded navigation blocked: ${targetError}`);
+        await page.goto(step.value, { waitUntil: 'domcontentloaded', timeout });
+      } else if (step.action === 'click' && selector) {
+        await page.locator(toPlaywrightSelector(selector)).first().click({ timeout });
+      } else if ((step.action === 'type' || step.action === 'fill') && selector) {
+        await page.locator(toPlaywrightSelector(selector)).first().fill(step.value ?? '', { timeout });
+      } else if (step.action === 'wait') {
+        await page.waitForTimeout(Math.min(Number(step.value ?? 500), 30000));
+      }
+    }
+
+    const html = await page.content();
+    const screenshot = Uint8Array.from(await page.screenshot({ fullPage: true, type: 'png' }));
+    return { html, finalUrl: page.url(), screenshot };
+  } finally {
+    await browser.close();
+  }
+}
+
+async function prepareBrowserPage(browser: import('playwright').Browser) {
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, userAgent });
+  await page.route('**/*', async (route) => {
+    const requestUrl = route.request().url();
+    if (await validateResolvedUrl(requestUrl)) {
+      await route.abort('blockedbyclient');
+      return;
+    }
+    await route.continue();
+  });
+  return page;
+}
+
+function selectRecordedSelector(selector: unknown): string | undefined {
+  if (!selector || typeof selector !== 'object') return undefined;
+  const candidates = (selector as { candidates?: unknown }).candidates;
+  if (!Array.isArray(candidates)) return undefined;
+  const first = candidates.find((candidate) => candidate && typeof candidate === 'object' && typeof (candidate as { value?: unknown }).value === 'string');
+  return first ? (first as { value: string }).value : undefined;
+}
+
+function toPlaywrightSelector(selector: string): string {
+  return selector.startsWith('//') ? `xpath=${selector}` : selector;
 }
 
 async function waitForDomain(hostname: string): Promise<void> {
