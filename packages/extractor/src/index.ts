@@ -21,6 +21,8 @@ export type ExtractedField = {
 
 export { crawlPagination, findNextPageUrl, scrollUntilStable } from './pagination';
 export type { PaginationOptions, ScrollOptions } from './pagination';
+export { extractStructured } from './ai';
+export type { AiExtractionConfig, AiExtractionResult } from './ai';
 
 export function generateSelectorCandidates(element: Element): SelectorCandidate[] {
   const candidates: SelectorCandidate[] = [];
