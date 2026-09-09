@@ -38,6 +38,16 @@ export type ApiKeyMetadata = {
   revokedAt?: string;
 };
 
+export type RobotStep = {
+  id: string;
+  robotId: string;
+  orderIndex: number;
+  action: string;
+  selector?: unknown;
+  value?: string;
+  options?: unknown;
+};
+
 export class OpenScrapeApiError extends Error {
   constructor(public readonly status: number, message: string) {
     super(message);
@@ -73,6 +83,14 @@ export class OpenScrapeClient {
 
   runRobot(robotId: string, url: string): Promise<RunStatus> {
     return this.post(`/robots/${encodeURIComponent(robotId)}/runs`, { url });
+  }
+
+  listRobotSteps(robotId: string): Promise<RobotStep[]> {
+    return this.get(`/robots/${encodeURIComponent(robotId)}/steps`);
+  }
+
+  createRobotStep(robotId: string, step: Pick<RobotStep, 'action' | 'selector' | 'value' | 'options'>): Promise<RobotStep> {
+    return this.post(`/robots/${encodeURIComponent(robotId)}/steps`, step);
   }
 
   cancelRun(robotId: string, runId: string): Promise<{ cancelled: boolean }> {
