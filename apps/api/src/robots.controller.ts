@@ -40,17 +40,18 @@ export class RobotsController {
   @Post()
   async createRobot(@Body() body: CreateRobotInput, @Req() request?: RequestWithUser): Promise<Robot> {
     this.assertSafeUrl(body.startUrl);
+    const robotData = {
+      id: `robot-${Date.now()}`,
+      name: body.name,
+      type: body.type,
+      startUrl: body.startUrl,
+      status: 'ready',
+      ...(request?.user?.workspaceId ? { workspaceId: request.user.workspaceId } : {}),
+      ...(body.aiPrompt ? { aiPrompt: body.aiPrompt } : {}),
+      ...(body.aiSchema ? { aiSchema: body.aiSchema } : {}),
+    };
     const robot = await this.prisma.robot.create({
-      data: {
-        id: `robot-${Date.now()}`,
-        name: body.name,
-        type: body.type,
-        startUrl: body.startUrl,
-        status: 'ready',
-        workspaceId: request?.user?.workspaceId,
-        ...(body.aiPrompt ? { aiPrompt: body.aiPrompt } : {}),
-        ...(body.aiSchema ? { aiSchema: body.aiSchema } : {}),
-      },
+      data: robotData,
     });
 
     return {
