@@ -121,6 +121,22 @@ model Robot {
   runs      Run[]
   workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
   schedules Schedule[]
+  steps     RobotStep[]
+}
+
+model RobotStep {
+  id         String   @id
+  robotId    String
+  orderIndex Int
+  action     String
+  selector   Json?
+  value      String?
+  options    Json?
+  createdAt  DateTime @default(now())
+  robot      Robot    @relation(fields: [robotId], references: [id], onDelete: Cascade)
+
+  @@unique([robotId, orderIndex])
+  @@index([robotId, orderIndex])
 }
 
 model Schedule {

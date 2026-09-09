@@ -14,6 +14,7 @@ import { HealthController } from './health.controller';
 import { HealthService } from './health.service';
 import { PrismaService } from './prisma.service';
 import { RobotsController } from './robots.controller';
+import { RobotStepsController } from './robot-steps.controller';
 import { SessionGuard } from './session.guard';
 import { SessionCleanupService } from './session-cleanup.service';
 import { SchedulesController } from './schedules.controller';
@@ -39,7 +40,7 @@ const apiRateLimit = Number(process.env.API_RATE_LIMIT ?? 60);
   imports: [
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: Number.isFinite(apiRateLimit) && apiRateLimit > 0 ? apiRateLimit : 60 }]),
   ],
-  controllers: [AppController, ApiKeysController, AuditController, AuthController, BillingController, HealthController, MetricsController, RobotsController, RunLogsController, SchedulesController, UsageController, WorkspaceController],
+  controllers: [AppController, ApiKeysController, AuditController, AuthController, BillingController, HealthController, MetricsController, RobotStepsController, RobotsController, RunLogsController, SchedulesController, UsageController, WorkspaceController],
   providers: [
     PrismaService,
     AuditService,
