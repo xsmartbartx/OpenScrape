@@ -165,6 +165,19 @@ model Run {
   screenshot Bytes?
   robot     Robot     @relation(fields: [robotId], references: [id])
   logs      RunLog[]
+  results   Result[]
+}
+
+model Result {
+  id         String   @id
+  runId      String
+  data       Json
+  sourceUrl  String?
+  pageIndex  Int?
+  createdAt  DateTime @default(now())
+  run        Run      @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([runId, createdAt])
 }
 
 model RunLog {
