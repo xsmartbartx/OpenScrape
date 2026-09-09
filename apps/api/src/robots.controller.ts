@@ -1,4 +1,5 @@
 import { BadRequestException, Body, Controller, Delete, Get, Header, HttpException, HttpStatus, Inject, NotFoundException, Param, Post, Req, Res } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import type { Response } from 'express';
 import type { Request } from 'express';
 import type { CreateRobotInput, CreateRunInput, Robot, RunStatus } from '@openscrape/contracts';
@@ -40,7 +41,7 @@ export class RobotsController {
   @Post()
   async createRobot(@Body() body: CreateRobotInput, @Req() request?: RequestWithUser): Promise<Robot> {
     this.assertSafeUrl(body.startUrl);
-    const robotData = {
+    const robotData: Prisma.RobotUncheckedCreateInput = {
       id: `robot-${Date.now()}`,
       name: body.name,
       type: body.type,
@@ -48,7 +49,7 @@ export class RobotsController {
       status: 'ready',
       ...(request?.user?.workspaceId ? { workspaceId: request.user.workspaceId } : {}),
       ...(body.aiPrompt ? { aiPrompt: body.aiPrompt } : {}),
-      ...(body.aiSchema ? { aiSchema: body.aiSchema } : {}),
+      ...(body.aiSchema ? { aiSchema: body.aiSchema as Prisma.InputJsonValue } : {}),
     };
     const robot = await this.prisma.robot.create({
       data: robotData,

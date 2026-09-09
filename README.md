@@ -523,7 +523,7 @@ cloud deployment is called production-ready.
 - [x] Enforce a configurable free-plan run quota per billing period.
 - [x] Expose workspace usage summary for billing and plan enforcement.
 - [x] AI extraction foundation with usage/cost controls.
-- [ ] Worker/provider integration for opt-in AI extraction runs.
+- [x] Worker/provider integration for opt-in AI extraction runs.
 - [x] Queue retries, exponential backoff, graceful worker shutdown, and exports.
 - [x] Run cancellation for queued/running jobs.
 - [x] Workspace-scoped repeatable schedules with persisted runs.
