@@ -32,6 +32,8 @@ export class RobotsController {
       type: robot.type as Robot['type'],
       startUrl: robot.startUrl,
       status: robot.status as Robot['status'],
+      aiPrompt: robot.aiPrompt ?? undefined,
+      aiSchema: robot.aiSchema as Record<string, unknown> | undefined,
     }));
   }
 

@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { extractStructured } from '@openscrape/extractor';
 import { lookup } from 'node:dns/promises';
 import { Worker } from 'bullmq';
 import IORedis from 'ioredis';
@@ -66,7 +67,7 @@ const worker = new Worker(
       await assertRobotsAllowed(url);
     }
 
-    const robot = robotId ? await prisma.robot.findUnique({ where: { id: robotId }, select: { type: true } }) : undefined;
+    const robot = robotId ? await prisma.robot.findUnique({ where: { id: robotId }, select: { type: true, aiPrompt: true, aiSchema: true } }) : undefined;
     const captured = robot?.type === 'recorded'
       ? await replayRecordedRobot(url, robotId!)
       : await capturePage(url);
@@ -84,6 +85,24 @@ const worker = new Worker(
         .trim()
         .slice(0, 220),
     };
+    let structuredData: unknown;
+    if (robot?.type === 'ai') {
+      const endpoint = process.env.AI_ENDPOINT;
+      const apiKey = process.env.AI_API_KEY;
+      const model = process.env.AI_MODEL;
+      const schema = robot.aiSchema ?? parseJsonConfig(process.env.AI_SCHEMA, { type: 'object', additionalProperties: true });
+      const instruction = robot.aiPrompt ?? process.env.AI_PROMPT;
+      if (!endpoint || !apiKey || !model || !instruction) {
+        throw new Error('AI robot requires AI_ENDPOINT, AI_API_KEY, AI_MODEL, and an aiPrompt.');
+      }
+      const aiResult = await extractStructured<Record<string, unknown>>(
+        html.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<style[\s\S]*?<\/style>/gi, '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(),
+        instruction,
+        { endpoint, apiKey, model, schema: schema as Record<string, unknown>, schemaName: `openscrape_${robotId}` },
+      );
+      structuredData = aiResult.data;
+      result.status = 'completed';
+    }
 
     if (jobId !== 'unknown') {
       await prisma.result.create({
@@ -92,7 +111,7 @@ const worker = new Worker(
           runId,
           sourceUrl: finalUrl,
           pageIndex: 0,
-          data: { title: result.title, snippet: result.snippet, url: finalUrl },
+          data: structuredData ?? { title: result.title, snippet: result.snippet, url: finalUrl },
         },
       }).catch(() => undefined);
       await prisma.run.updateMany({
@@ -104,6 +123,7 @@ const worker = new Worker(
             status: result.status,
             title: result.title,
             snippet: result.snippet,
+            structuredData,
           }),
           html,
           screenshot,
@@ -304,6 +324,16 @@ function selectRecordedSelector(selector: unknown): string | undefined {
 
 function toPlaywrightSelector(selector: string): string {
   return selector.startsWith('//') ? `xpath=${selector}` : selector;
+}
+
+function parseJsonConfig(value: string | undefined, fallback: Record<string, unknown>): Record<string, unknown> {
+  if (!value) return fallback;
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed as Record<string, unknown> : fallback;
+  } catch {
+    return fallback;
+  }
 }
 
 async function waitForDomain(hostname: string): Promise<void> {
