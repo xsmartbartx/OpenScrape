@@ -1,12 +1,18 @@
 import { extractStructured } from './ai';
 
+class MockResponse {
+  constructor(private readonly body: string, public readonly status: number) {}
+  get ok() { return this.status >= 200 && this.status < 300; }
+  async text() { return this.body; }
+}
+
 describe('AI structured extraction adapter', () => {
   it('sends server-side credentials and returns structured JSON with usage', async () => {
-    const fetchMock = jest.fn().mockResolvedValue(new Response(JSON.stringify({
+    const fetchMock = jest.fn().mockResolvedValue(new MockResponse(JSON.stringify({
       model: 'test-model',
       choices: [{ message: { content: '{"title":"Example"}' } }],
       usage: { prompt_tokens: 10, completion_tokens: 4, total_tokens: 14 },
-    }), { status: 200 }));
+    }), 200));
 
     const result = await extractStructured<{ title: string }>('page text', 'Extract the title.', {
       endpoint: 'https://llm.example.com/v1',
@@ -22,7 +28,7 @@ describe('AI structured extraction adapter', () => {
   });
 
   it('rejects oversized provider responses', async () => {
-    const fetchMock = jest.fn().mockResolvedValue(new Response('x'.repeat(100), { status: 200 }));
+    const fetchMock = jest.fn().mockResolvedValue(new MockResponse('x'.repeat(100), 200));
     await expect(extractStructured('page', 'instruction', {
       endpoint: 'https://llm.example.com/v1', apiKey: 'secret', model: 'model', schemaName: 'result', schema: {}, maxOutputBytes: 10, fetch: fetchMock,
     })).rejects.toThrow('exceeds the configured limit');

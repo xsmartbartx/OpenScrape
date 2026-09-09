@@ -504,6 +504,7 @@ cloud deployment is called production-ready.
 - [x] Field mapping and deterministic extraction.
 - [x] Pagination and infinite-scroll controls.
 - [x] Persisted structured results with paginated JSON/CSV exports.
+- [x] Provider-neutral structured AI extraction adapter with input/output limits and token usage reporting.
 - [x] Persisted recorder step model and workspace-scoped step API foundation.
 - [x] Sanitized captured-HTML recorder preview with click-to-ranked-selector steps.
 - [x] Playwright replay for recorded `goto`, `click`, `type/fill`, and `wait` steps.
@@ -521,7 +522,8 @@ cloud deployment is called production-ready.
 - [x] Add password-based registration and login sessions.
 - [x] Enforce a configurable free-plan run quota per billing period.
 - [x] Expose workspace usage summary for billing and plan enforcement.
-- [ ] AI extraction with usage/cost controls.
+- [x] AI extraction foundation with usage/cost controls.
+- [ ] Worker/provider integration for opt-in AI extraction runs.
 - [x] Queue retries, exponential backoff, graceful worker shutdown, and exports.
 - [x] Run cancellation for queued/running jobs.
 - [x] Workspace-scoped repeatable schedules with persisted runs.
