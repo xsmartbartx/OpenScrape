@@ -86,6 +86,15 @@ const worker = new Worker(
     };
 
     if (jobId !== 'unknown') {
+      await prisma.result.create({
+        data: {
+          id: `result-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          runId,
+          sourceUrl: finalUrl,
+          pageIndex: 0,
+          data: { title: result.title, snippet: result.snippet, url: finalUrl },
+        },
+      }).catch(() => undefined);
       await prisma.run.updateMany({
         where: { id: runId, status: { not: 'cancelled' } },
         data: {
