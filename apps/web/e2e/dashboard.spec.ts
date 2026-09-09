@@ -23,6 +23,14 @@ async function mockApi(page: import('@playwright/test').Page) {
       await route.fulfill({ json: { robots: 1, activeSchedules: 2, runs: { queued: 0, running: 0, success: 4, failed: 1, cancelled: 0 } } });
       return;
     }
+    if (url.pathname.endsWith('/preview')) {
+      await route.fulfill({ contentType: 'text/html', body: '<main><button data-testid="buy">Buy</button></main>' });
+      return;
+    }
+    if (url.pathname.endsWith('/steps') && request.method() === 'POST') {
+      await route.fulfill({ json: { id: 'step-1', action: 'click', orderIndex: 0 } });
+      return;
+    }
     if (url.pathname.includes('/runs')) {
       await route.fulfill({ json: [] });
       return;
@@ -44,4 +52,8 @@ test('logs in and renders the authenticated workspace dashboard', async ({ page 
   await expect(page.getByText('Example robot')).toBeVisible();
   await expect(page.getByText('Schedules')).toBeVisible();
   await expect(page.getByText('4')).toBeVisible();
+
+  await page.getByRole('button', { name: 'View', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Recorder preview' })).toBeVisible();
+  await page.getByRole('button', { name: 'Buy' }).click();
 });
