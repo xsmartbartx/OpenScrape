@@ -19,6 +19,9 @@ export type ExtractedField = {
   value: string | string[] | null;
 };
 
+export { crawlPagination, findNextPageUrl, scrollUntilStable } from './pagination';
+export type { PaginationOptions, ScrollOptions } from './pagination';
+
 export function generateSelectorCandidates(element: Element): SelectorCandidate[] {
   const candidates: SelectorCandidate[] = [];
   const add = (candidate: SelectorCandidate) => {
