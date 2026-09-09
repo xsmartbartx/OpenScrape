@@ -93,6 +93,10 @@ export class OpenScrapeClient {
     return this.post(`/robots/${encodeURIComponent(robotId)}/steps`, step);
   }
 
+  getRobotPreview(robotId: string): Promise<string> {
+    return this.requestText(`/robots/${encodeURIComponent(robotId)}/preview`);
+  }
+
   cancelRun(robotId: string, runId: string): Promise<{ cancelled: boolean }> {
     return this.delete(`/robots/${encodeURIComponent(robotId)}/runs/${encodeURIComponent(runId)}`);
   }
@@ -160,5 +164,12 @@ export class OpenScrapeClient {
       throw new OpenScrapeApiError(response.status, message);
     }
     return data as T;
+  }
+
+  private async requestText(path: string): Promise<string> {
+    const response = await this.request(`${this.baseUrl}${path}`, { headers: this.headers });
+    const text = await response.text();
+    if (!response.ok) throw new OpenScrapeApiError(response.status, text || `OpenScrape API request failed with ${response.status}.`);
+    return text;
   }
 }

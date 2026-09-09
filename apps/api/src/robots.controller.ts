@@ -58,6 +58,18 @@ export class RobotsController {
     };
   }
 
+  @Get(':id/preview')
+  @Header('Content-Type', 'text/html; charset=utf-8')
+  async getPreview(@Param('id') robotId: string, @Req() request: RequestWithUser): Promise<string> {
+    const run = await this.prisma.run.findFirst({
+      where: { robotId, ...(request.user?.workspaceId ? { robot: { workspaceId: request.user.workspaceId } } : {}) },
+      orderBy: { startedAt: 'desc' },
+      select: { html: true },
+    });
+    if (!run?.html) throw new NotFoundException('No captured HTML is available for this robot.');
+    return run.html;
+  }
+
   @Post(':id/runs')
   async createRun(@Param('id') robotId: string, @Body() body: Pick<CreateRunInput, 'url'>, @Req() request?: RequestWithUser): Promise<RunStatus> {
     this.assertSafeUrl(body.url);
