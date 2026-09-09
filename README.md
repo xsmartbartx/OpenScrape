@@ -505,7 +505,8 @@ cloud deployment is called production-ready.
 - [x] Pagination and infinite-scroll controls.
 - [x] Persisted recorder step model and workspace-scoped step API foundation.
 - [x] Sanitized captured-HTML recorder preview with click-to-ranked-selector steps.
-- [ ] Live browser recorder session with CDP preview and action replay.
+- [x] Playwright replay for recorded `goto`, `click`, `type/fill`, and `wait` steps.
+- [ ] Live browser recorder session with CDP preview and bidirectional action streaming.
 
 ### Phase 3 — Production product
 
