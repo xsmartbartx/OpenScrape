@@ -454,6 +454,8 @@ cloud deployment is called production-ready.
   workspace plan/subscription state. Set `BILLING_WEBHOOK_SECRET` before use.
 - Operational workspace metrics are available at `GET /api/v1/metrics/workspace`
   with robot count, active schedules, and run status aggregates.
+- API requests receive a propagated `X-Request-Id` and emit structured JSON
+  request logs with method, path, status, and duration for log aggregation.
 - The authenticated dashboard displays these metrics as an operational workspace
   summary and refreshes them after new runs.
 - Active runs can be cancelled with `DELETE /api/v1/robots/:id/runs/:runId`;
@@ -533,6 +535,7 @@ cloud deployment is called production-ready.
 - [x] TypeScript SDK and compiled CLI foundation.
 - [x] Liveness/readiness, rate limits, security headers, SSRF controls, and deployment documentation.
 - [x] Workspace operational metrics foundation.
+- [x] Request correlation IDs and structured HTTP request logging foundation.
 - [ ] Centralized observability, restore drills, and production infrastructure.
 - [x] Versioned Prisma migration chain for current product models.
 - [ ] Stripe/Paddle checkout, subscription webhooks, plan synchronization, and invoices.
