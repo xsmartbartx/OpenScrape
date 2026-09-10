@@ -398,10 +398,11 @@ Backups must be stored outside the application host or on encrypted durable
 storage. A restore drill should be performed regularly against an isolated
 database and followed by the readiness and smoke checks.
 
-The initial migration is a baseline for a new database. If a database was
-previously created with `db:push`, take a backup, compare it with the migration,
-and mark the baseline as applied with Prisma's `migrate resolve` procedure before
-using `db:migrate` in production.
+The migration chain includes the initial baseline and a current product-model
+delta. If a database was previously created with `db:push`, take a backup,
+compare it with the migration chain, and mark the appropriate migrations as
+applied with Prisma's `migrate resolve` procedure before using `db:migrate` in
+production.
 
 Use `npx pnpm` when pnpm is not installed globally. Do not run `npx tsc`,
 because that can resolve an unrelated npm package named `tsc`.
@@ -532,7 +533,8 @@ cloud deployment is called production-ready.
 - [x] TypeScript SDK and compiled CLI foundation.
 - [x] Liveness/readiness, rate limits, security headers, SSRF controls, and deployment documentation.
 - [x] Workspace operational metrics foundation.
-- [ ] Centralized observability, backups, restore drills, and production infrastructure.
+- [ ] Centralized observability, restore drills, and production infrastructure.
+- [x] Versioned Prisma migration chain for current product models.
 - [ ] Stripe/Paddle checkout, subscription webhooks, plan synchronization, and invoices.
 - [x] Provider-neutral signed billing webhook and subscription state foundation.
 - [ ] Stripe/Paddle checkout, provider adapters, invoices, and tax handling.
