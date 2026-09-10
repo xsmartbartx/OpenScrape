@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { createHash } from 'node:crypto';
+import { lookup } from 'node:dns/promises';
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
 import type { WebSocket } from 'ws';
 import { PrismaService } from './prisma.service';
@@ -41,7 +42,7 @@ export class RecorderRuntimeService implements OnModuleDestroy {
 
   async start(sessionId: string, workspaceId: string, robotId: string, startUrl: string): Promise<void> {
     if (this.sessions.has(sessionId)) return;
-    const urlError = validateTargetUrl(startUrl);
+    const urlError = await this.validateResolvedUrl(startUrl);
     if (urlError) throw new Error(urlError);
 
     const browser = await chromium.launch({ headless: true });
@@ -50,7 +51,7 @@ export class RecorderRuntimeService implements OnModuleDestroy {
       const page = await context.newPage();
       await page.route('**/*', async (route) => {
         const requestUrl = route.request().url();
-        if (validateTargetUrl(requestUrl)) {
+        if (await this.validateResolvedUrl(requestUrl)) {
           await route.abort('blockedbyclient');
           return;
         }
@@ -185,12 +186,12 @@ export class RecorderRuntimeService implements OnModuleDestroy {
     if (value.length > maxActionValueLength) throw new Error('Recorder action value is too long.');
 
     if (action === 'goto') {
-      const urlError = validateTargetUrl(value);
+      const urlError = await this.validateResolvedUrl(value);
       if (urlError) throw new Error(`Navigation blocked: ${urlError}`);
       await runtime.page.goto(value, { waitUntil: 'domcontentloaded', timeout: 30_000 });
     } else if (action === 'click') {
       if (Number.isFinite(input.x) && Number.isFinite(input.y)) {
-        await runtime.page.mouse.click(Number(input.x), Number(input.y));
+        await runtime.page.mouse.click(Math.min(Math.max(Number(input.x), 0), 1280), Math.min(Math.max(Number(input.y), 0), 720));
       } else if (selector) {
         await runtime.page.locator(this.toPlaywrightSelector(selector)).first().click({ timeout: 30_000 });
       } else {
@@ -241,5 +242,17 @@ export class RecorderRuntimeService implements OnModuleDestroy {
 
   private toPlaywrightSelector(selector: string): string {
     return selector.startsWith('//') ? `xpath=${selector}` : selector;
+  }
+
+  private async validateResolvedUrl(value: string): Promise<string | undefined> {
+    const syntaxError = validateTargetUrl(value);
+    if (syntaxError) return syntaxError;
+    const hostname = new URL(value).hostname;
+    const addresses = await lookup(hostname, { all: true, verbatim: true });
+    for (const address of addresses) {
+      const resolvedUrl = address.address.includes(':') ? `http://[${address.address}]` : `http://${address.address}`;
+      if (validateTargetUrl(resolvedUrl)) return 'Target resolves to a private or local network address.';
+    }
+    return undefined;
   }
 }

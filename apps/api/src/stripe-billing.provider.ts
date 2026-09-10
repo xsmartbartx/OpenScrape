@@ -15,6 +15,8 @@ export class StripeBillingProvider {
       mode: 'subscription',
       line_items: [{ price: input.priceId, quantity: 1 }],
       customer_email: input.email,
+      billing_address_collection: process.env.STRIPE_AUTOMATIC_TAX === 'true' ? 'required' : 'auto',
+      automatic_tax: { enabled: process.env.STRIPE_AUTOMATIC_TAX === 'true' },
       client_reference_id: input.workspaceId,
       metadata: { workspaceId: input.workspaceId, plan: input.plan },
       subscription_data: { metadata: { workspaceId: input.workspaceId, plan: input.plan } },
