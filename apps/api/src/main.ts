@@ -1,10 +1,12 @@
 import { NestFactory } from '@nestjs/core';
+import { WsAdapter } from '@nestjs/platform-ws';
 import { json, urlencoded } from 'express';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true });
+  app.useWebSocketAdapter(new WsAdapter(app));
   app.use(helmet());
   app.use(json({ limit: '1mb' }));
   app.use(urlencoded({ limit: '1mb', extended: false }));

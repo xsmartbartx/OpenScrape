@@ -3,6 +3,7 @@ import type { Request } from 'express';
 import type { SessionUser } from './session.guard';
 import { PrismaService } from './prisma.service';
 import { AuditService } from './audit.service';
+import { RecorderRuntimeService } from './recorder-runtime.service';
 import { validateTargetUrl } from './url-validation';
 
 type RequestWithUser = Request & { user?: SessionUser };
@@ -10,7 +11,7 @@ type SessionInput = { startUrl?: string };
 
 @Controller('robots')
 export class RecorderSessionsController {
-  constructor(private readonly prisma: PrismaService, private readonly audit: AuditService) {}
+  constructor(private readonly prisma: PrismaService, private readonly audit: AuditService, private readonly runtime?: RecorderRuntimeService) {}
 
   @Get(':robotId/recorder-sessions')
   async list(@Param('robotId') robotId: string, @Req() request: RequestWithUser) {
@@ -36,6 +37,7 @@ export class RecorderSessionsController {
       },
     });
     await this.audit.record({ action: 'recorder_session.create', userId: user.id, workspaceId: user.workspaceId, resourceType: 'RecorderSession', resourceId: session.id });
+    if (this.runtime) await this.runtime.start(session.id, user.workspaceId, robotId, startUrl);
     return session;
   }
 
@@ -45,6 +47,7 @@ export class RecorderSessionsController {
     const session = await this.prisma.recorderSession.findFirst({ where: { id: sessionId, robotId, workspaceId: user.workspaceId, status: { not: 'stopped' } } });
     if (!session) throw new NotFoundException('Recorder session not found.');
 
+    await this.runtime?.stop(session.id);
     await this.prisma.recorderSession.update({ where: { id: session.id }, data: { status: 'stopped', stoppedAt: new Date() } });
     await this.audit.record({ action: 'recorder_session.stop', userId: user.id, workspaceId: user.workspaceId, resourceType: 'RecorderSession', resourceId: session.id });
     return { stopped: true };

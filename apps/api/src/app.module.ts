@@ -17,6 +17,8 @@ import { RobotsController } from './robots.controller';
 import { RobotStepsController } from './robot-steps.controller';
 import { ResultsController } from './results.controller';
 import { RecorderSessionsController } from './recorder-sessions.controller';
+import { RecorderGateway } from './recorder.gateway';
+import { RecorderRuntimeService } from './recorder-runtime.service';
 import { SessionGuard } from './session.guard';
 import { SessionCleanupService } from './session-cleanup.service';
 import { SchedulesController } from './schedules.controller';
@@ -47,6 +49,8 @@ const apiRateLimit = Number(process.env.API_RATE_LIMIT ?? 60);
   providers: [
     PrismaService,
     AuditService,
+    RecorderRuntimeService,
+    RecorderGateway,
     ArtifactRetentionService,
     HealthService,
     SessionCleanupService,
