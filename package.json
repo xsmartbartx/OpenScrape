@@ -19,6 +19,7 @@
     "infra:down": "docker compose down",
     "db:backup": "sh ./scripts/db-backup.sh",
     "db:restore": "sh ./scripts/db-restore.sh",
-    "db:restore:drill": "sh ./scripts/db-restore-drill.sh"
+    "db:restore:drill": "sh ./scripts/db-restore-drill.sh",
+    "validate:production": "sh ./scripts/validate-production-env.sh"
   }
 }

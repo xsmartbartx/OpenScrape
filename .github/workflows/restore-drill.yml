@@ -1,0 +1,48 @@
+name: Restore Drill
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 3 * * 0'
+
+permissions:
+  contents: read
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: openscrape
+          POSTGRES_PASSWORD: openscrape-ci
+          POSTGRES_DB: restore_drill
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U openscrape -d restore_drill"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PRODUCTION_DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+      RESTORE_DRILL_DATABASE_URL: postgresql://openscrape:openscrape-ci@localhost:5432/restore_drill
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install --yes postgresql-client
+
+      - name: Require production database secret
+        run: test -n "$PRODUCTION_DATABASE_URL"
+
+      - name: Create compressed production backup
+        run: pg_dump --no-owner --no-privileges "$PRODUCTION_DATABASE_URL" | gzip > "$RUNNER_TEMP/openscrape.sql.gz"
+
+      - name: Run isolated restore drill
+        run: >-
+          CONFIRM_RESTORE_DRILL=yes
+          RESTORE_DRILL_DATABASE_URL="$RESTORE_DRILL_DATABASE_URL"
+          npm run db:restore:drill -- "$RUNNER_TEMP/openscrape.sql.gz"

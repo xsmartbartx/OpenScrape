@@ -36,6 +36,22 @@ services:
     volumes:
       - minio-data:/data
 
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      PUBLIC_DOMAIN: ${PUBLIC_DOMAIN}
+    volumes:
+      - ./infra/docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      api: { condition: service_healthy }
+      web: { condition: service_started }
+    ports:
+      - "80:80"
+      - "443:443"
+
   api:
     build:
       context: .
@@ -112,3 +128,5 @@ volumes:
   postgres-data:
   redis-data:
   minio-data:
+  caddy-data:
+  caddy-config:
