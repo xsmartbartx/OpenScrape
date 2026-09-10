@@ -27,9 +27,18 @@ const robotsFailClosed = process.env.ROBOTS_FAIL_CLOSED === 'true';
 const domainRequestIntervalMs = Number(process.env.DOMAIN_REQUEST_INTERVAL_MS ?? 1000);
 const nextDomainRequestAt = new Map<string, number>();
 
+function logEvent(event: string, fields: Record<string, unknown> = {}): void {
+  console.log(JSON.stringify({ event, ...fields }));
+}
+
+function elapsedMs(startedAt: bigint): number {
+  return Math.round(Number(process.hrtime.bigint() - startedAt) / 10_000) / 100;
+}
+
 const worker = new Worker(
   'scrape',
   async (job) => {
+    const startedAt = process.hrtime.bigint();
     const data = job.data as { url?: string; robotId?: string; scheduleId?: string };
     let { url, robotId } = data;
     const jobId = String(job.id ?? 'unknown');
@@ -46,7 +55,7 @@ const worker = new Worker(
       }
     }
     if (!url) throw new Error('Scheduled job robot has no start URL.');
-    console.log(`Received scrape job ${jobId} for ${url}`);
+    logEvent('worker.job.received', { jobId, robotId });
 
     const urlError = await validateResolvedUrl(url);
     if (urlError) {
@@ -134,15 +143,16 @@ const worker = new Worker(
       }).catch(() => undefined);
     }
 
+    logEvent('worker.job.completed', { jobId, robotId, durationMs: elapsedMs(startedAt) });
     return result;
   },
   { connection, concurrency: 2, lockDuration: 120000 },
 );
 
-worker.on('completed', (job, result) => console.log(`Completed job ${job.id ?? 'unknown'} with result:`, result));
+worker.on('completed', (job) => logEvent('worker.queue.completed', { jobId: job.id ?? 'unknown' }));
 worker.on('failed', async (job, error) => {
   const jobId = String(job?.id ?? 'unknown');
-  console.error(`Failed job ${jobId}`, error);
+  logEvent('worker.job.failed', { jobId, message: error instanceof Error ? error.message : 'Unknown worker error' });
 
   if (jobId !== 'unknown') {
     const jobData = job?.data as { robotId?: string } | undefined;
@@ -164,7 +174,7 @@ worker.on('failed', async (job, error) => {
   }
 });
 
-console.log('OpenScrape worker listening on scrape queue');
+logEvent('worker.started', { queue: 'scrape' });
 
 let shuttingDown = false;
 const shutdown = async () => {

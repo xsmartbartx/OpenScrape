@@ -41,7 +41,9 @@ services:
       context: .
       dockerfile: infra/docker/Dockerfile.api
     restart: unless-stopped
-    env_file: .env
+    env_file:
+      - path: .env
+        required: false
     environment:
       NODE_ENV: production
       AUTH_REQUIRED: "true"
@@ -66,7 +68,9 @@ services:
       context: .
       dockerfile: infra/docker/Dockerfile.worker
     restart: unless-stopped
-    env_file: .env
+    env_file:
+      - path: .env
+        required: false
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
