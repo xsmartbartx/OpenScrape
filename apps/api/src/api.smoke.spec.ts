@@ -32,7 +32,10 @@ describe('API smoke', () => {
     await request(app.getHttpServer())
       .get('/api/v1/health')
       .expect(200)
-      .expect((response: Response) => expect(response.body).toMatchObject({ status: 'ok', service: 'openscrape-api' }));
+      .expect((response: Response) => {
+        expect(response.body).toMatchObject({ status: 'ok', service: 'openscrape-api' });
+        expect(response.headers['x-request-id']).toEqual(expect.any(String));
+      });
 
     await request(app.getHttpServer())
       .get('/api/v1/health/ready')

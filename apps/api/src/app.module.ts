@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { Queue } from 'bullmq';
@@ -24,6 +24,7 @@ import { MetricsController } from './metrics.controller';
 import { RunLogsController } from './run-logs.controller';
 import { UsageController } from './usage.controller';
 import { WorkspaceController } from './workspace.controller';
+import { RequestLoggingMiddleware } from './request-logging.middleware';
 
 const redisUrl = new URL(process.env.REDIS_URL ?? 'redis://localhost:6379');
 const queue = new Queue('scrape', {
@@ -102,4 +103,8 @@ const apiRateLimit = Number(process.env.API_RATE_LIMIT ?? 60);
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(RequestLoggingMiddleware).forRoutes({ path: '*', method: RequestMethod.ALL });
+  }
+}
