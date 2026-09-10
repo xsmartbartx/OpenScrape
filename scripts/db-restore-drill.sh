@@ -14,8 +14,16 @@ if [ "${CONFIRM_RESTORE_DRILL:-}" != "yes" ]; then
   exit 2
 fi
 
-gzip -dc "$file" | psql "$target"
-tables="$(psql "$target" -Atqc "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public';")"
+run_psql() {
+  if [ "${RESTORE_DRILL_DOCKER:-false}" = "true" ]; then
+    docker compose exec -T postgres psql "$@"
+  else
+    psql "$@"
+  fi
+}
+
+gzip -dc "$file" | run_psql "$target"
+tables="$(run_psql "$target" -Atqc "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public';")"
 if [ "${tables:-0}" -lt 1 ]; then
   printf 'Restore drill failed: no public tables found.\n' >&2
   exit 1
