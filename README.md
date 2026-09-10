@@ -272,6 +272,13 @@ order, records which candidate succeeded, and reports a clear error when no
 candidate matches. Selectors are never treated as permission to bypass access
 controls, CAPTCHAs, robots rules, or a site's terms of service.
 
+The live recorder starts an isolated, time-limited Playwright context for an
+authenticated workspace session. It streams JPEG frames over an authenticated
+WebSocket at `/api/v1/recorder` and accepts only `goto`, `click`, `fill/type`,
+and bounded `wait` actions. Every accepted action is persisted as a robot step.
+Navigation applies syntax, DNS/SSRF, and browser-request checks; cookies,
+authorization headers, and page HTML are never sent in the stream.
+
 ## 7. AI Extraction Mode
 
 AI extraction is an optional adapter behind a stable internal contract. The first
@@ -319,14 +326,14 @@ The API is versioned from the beginning under `/api/v1`. MVP endpoints:
 - `GET /runs/:id` — run state and statistics
 - `GET /runs/:id/results` — paginated extracted data
 
-OpenAPI is generated from the NestJS application and becomes the source for the
-TypeScript SDK, Python SDK, and CLI in later milestones.
+OpenAPI remains the intended source for future generated clients. The current
+versioned API is exercised by the dashboard, TypeScript SDK, and CLI.
 
 ## 12. SDK & CLI
 
-SDKs are planned only after the API contract is exercised by the dashboard. The
-TypeScript SDK is first; the Python SDK and CLI follow once authentication,
-pagination, errors, and idempotency headers are stable.
+The TypeScript SDK and compiled CLI are available for authenticated robots, runs,
+results, schedules, and API-key workflows. A Python SDK remains a later
+compatibility milestone after the API contract has stabilized further.
 
 ## 13. Integrations (Sheets, Airtable, Webhooks)
 
@@ -406,9 +413,12 @@ production.
 
 Use `npx pnpm` when pnpm is not installed globally. Do not run `npx tsc`,
 because that can resolve an unrelated npm package named `tsc`.
-Production packaging will add container images, health checks, secret injection,
-database migrations, backups, structured logs, and resource limits before any
-cloud deployment is called production-ready.
+Production packaging is provided by `docker-compose.production.yml` and the
+three images under `infra/docker/`. It includes health checks, startup migration
+deployment, secret injection through `.env`, Redis authentication, restart
+policies, loopback-only bindings, structured logs, and resource boundaries that
+can be completed by the hosting platform. See [docs/production.md](docs/production.md)
+and [docs/observability.md](docs/observability.md).
 
 ## 16. Security & Anti-Blocking
 
@@ -456,6 +466,12 @@ cloud deployment is called production-ready.
   with robot count, active schedules, and run status aggregates.
 - API requests receive a propagated `X-Request-Id` and emit structured JSON
   request logs with method, path, status, and duration for log aggregation.
+- Live recorder sessions use authenticated WebSocket control, isolated browser
+  contexts, a ten-minute lifetime, bounded messages/actions, and DNS re-checks
+  on navigation.
+- Stripe checkout, subscription synchronization, signed webhooks, invoice
+  listing, and optional Stripe Automatic Tax are available when Stripe secrets
+  and a price are configured.
 - The authenticated dashboard displays these metrics as an operational workspace
   summary and refreshes them after new runs.
 - Active runs can be cancelled with `DELETE /api/v1/robots/:id/runs/:runId`;
@@ -512,7 +528,7 @@ cloud deployment is called production-ready.
 - [x] Sanitized captured-HTML recorder preview with click-to-ranked-selector steps.
 - [x] Playwright replay for recorded `goto`, `click`, `type/fill`, and `wait` steps.
 - [x] Persisted recorder session lifecycle (`start/list/stop`) foundation.
-- [ ] Live browser recorder session with CDP preview and bidirectional action streaming.
+- [x] Live browser recorder session with authenticated preview and bidirectional action streaming.
 
 ### Phase 3 — Production product
 
@@ -536,11 +552,11 @@ cloud deployment is called production-ready.
 - [x] Liveness/readiness, rate limits, security headers, SSRF controls, and deployment documentation.
 - [x] Workspace operational metrics foundation.
 - [x] Request correlation IDs and structured HTTP request logging foundation.
-- [ ] Centralized observability, restore drills, and production infrastructure.
+- [x] Centralized structured observability, restore drills, and production infrastructure.
 - [x] Versioned Prisma migration chain for current product models.
-- [ ] Stripe/Paddle checkout, subscription webhooks, plan synchronization, and invoices.
+- [x] Stripe checkout, subscription webhooks, plan synchronization, and invoices.
 - [x] Provider-neutral signed billing webhook and subscription state foundation.
-- [ ] Stripe/Paddle checkout, provider adapters, invoices, and tax handling.
+- [x] Stripe provider adapter, invoice boundary, and optional Automatic Tax handling.
 
 ### Definition of Done for MVP
 
@@ -549,8 +565,9 @@ see a successful result in the dashboard, retrieve the same result through the
 versioned API, and repeat the run without manual database or queue operations.
 
 The local MVP definition is currently satisfied. Commercial production release
-remains gated on payment integration, audit controls, centralized monitoring,
-backup/restore drills, infrastructure hardening, and automated browser E2E tests.
+still requires deployment-specific HTTPS, secret management, log retention,
+Stripe merchant/tax configuration, and a completed restore drill against the
+operator's isolated database.
 
 ## 18. Repository Layout
 
@@ -571,12 +588,12 @@ docs/        Architecture decisions and API documentation
 
 ## 19. License & Contribution
 
-## 20. TypeScript SDK
+### TypeScript SDK
 
 See [docs/sdk.md](docs/sdk.md) for the authenticated `@openscrape/sdk` usage
 example and supported automation operations.
 
-## 21. CLI
+### CLI
 
 See [docs/cli.md](docs/cli.md) for the `openscrape` commands built on top of the
 SDK.
