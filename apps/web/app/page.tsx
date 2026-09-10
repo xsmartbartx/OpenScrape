@@ -143,7 +143,7 @@ export default function HomePage() {
   const stopLiveRecorder = async () => {
     const sessionId = liveSessionId;
     recorderSocket.current?.close();
-    recorderSocket.current = undefined;
+    recorderSocket.current = null;
     if (sessionId && previewRobotId) {
       await apiFetch(`/robots/${previewRobotId}/recorder-sessions/${sessionId}`, { method: 'DELETE' }).catch(() => undefined);
     }
