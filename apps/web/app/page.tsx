@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import DOMPurify from 'dompurify';
 import { generateSelectorCandidates } from '@openscrape/extractor';
 
@@ -78,6 +78,12 @@ export default function HomePage() {
   const [previewHtml, setPreviewHtml] = useState<string>();
   const [previewRobotId, setPreviewRobotId] = useState<string>();
   const [recording, setRecording] = useState(false);
+  const [liveSessionId, setLiveSessionId] = useState<string>();
+  const [liveFrame, setLiveFrame] = useState<string>();
+  const [liveStatus, setLiveStatus] = useState<'idle' | 'connecting' | 'ready' | 'stopped'>('idle');
+  const [liveSelector, setLiveSelector] = useState('');
+  const [liveValue, setLiveValue] = useState('');
+  const recorderSocket = useRef<WebSocket>();
   const [metrics, setMetrics] = useState<WorkspaceMetrics>();
 
   const apiFetch = (path: string, options: RequestInit = {}) => {
@@ -133,6 +139,57 @@ export default function HomePage() {
     if (!response.ok) throw new Error('Could not save recorded step.');
     setError(undefined);
   };
+
+  const stopLiveRecorder = async () => {
+    const sessionId = liveSessionId;
+    recorderSocket.current?.close();
+    recorderSocket.current = undefined;
+    if (sessionId && previewRobotId) {
+      await apiFetch(`/robots/${previewRobotId}/recorder-sessions/${sessionId}`, { method: 'DELETE' }).catch(() => undefined);
+    }
+    setLiveSessionId(undefined);
+    setLiveFrame(undefined);
+    setLiveStatus('stopped');
+  };
+
+  const startLiveRecorder = async () => {
+    if (!previewRobotId || !token) return;
+    setLiveStatus('connecting');
+    setError(undefined);
+    try {
+      const response = await apiFetch(`/robots/${previewRobotId}/recorder-sessions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      const session = await response.json() as { id?: string };
+      if (!response.ok || !session.id) throw new Error('Could not start live recorder.');
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const socket = new WebSocket(`${wsProtocol}//${new URL(apiBaseUrl).host}/api/v1/recorder`);
+      recorderSocket.current = socket;
+      setLiveSessionId(session.id);
+      socket.onopen = () => socket.send(JSON.stringify({ type: 'attach', sessionId: session.id, token }));
+      socket.onmessage = (event) => {
+        const message = JSON.parse(String(event.data)) as { type?: string; data?: string; message?: string };
+        if (message.type === 'ready') setLiveStatus('ready');
+        if (message.type === 'frame' && message.data) setLiveFrame(`data:image/jpeg;base64,${message.data}`);
+        if (message.type === 'error') setError(message.message ?? 'Live recorder error.');
+        if (message.type === 'stopped') setLiveStatus('stopped');
+      };
+      socket.onerror = () => setError('Live recorder connection failed.');
+      socket.onclose = () => setLiveStatus((current) => current === 'stopped' ? current : 'idle');
+    } catch (startError) {
+      setLiveStatus('idle');
+      setError(startError instanceof Error ? startError.message : 'Could not start live recorder.');
+    }
+  };
+
+  const sendLiveAction = (action: Record<string, unknown>) => {
+    if (recorderSocket.current?.readyState !== WebSocket.OPEN) return;
+    recorderSocket.current.send(JSON.stringify(action));
+  };
+
+  useEffect(() => () => { recorderSocket.current?.close(); }, []);
 
   useEffect(() => {
     setToken(window.localStorage.getItem('openscrape_session') ?? undefined);
@@ -386,9 +443,24 @@ export default function HomePage() {
         </div>
       </section>
       {previewHtml && previewRobotId ? <section className="card recorder-panel">
-        <div className="panel-heading"><h2>Recorder preview</h2><button type="button" onClick={() => setRecording((active) => !active)}>{recording ? 'Stop recording' : 'Record clicks'}</button></div>
+        <div className="panel-heading"><h2>Recorder preview</h2><div className="recorder-actions"><button type="button" onClick={() => setRecording((active) => !active)}>{recording ? 'Stop recording' : 'Record clicks'}</button>{liveSessionId ? <button type="button" onClick={() => void stopLiveRecorder()}>Stop live</button> : <button type="button" onClick={() => void startLiveRecorder()}>Start live</button>}</div></div>
         <p className="muted">{recording ? 'Click an element to save a ranked selector step.' : 'Preview mode'}</p>
         <div className={`preview-frame ${recording ? 'recording' : ''}`} onClick={(event) => void recordElement(event).catch((recordError: Error) => setError(recordError.message))} dangerouslySetInnerHTML={{ __html: previewHtml }} />
+        {liveStatus !== 'idle' ? <div className="live-recorder">
+          <div className="panel-heading"><strong>Live session</strong><span className="muted">{liveStatus}</span></div>
+          {liveFrame ? <img className="live-frame" src={liveFrame} alt="Live browser preview" onClick={(event) => {
+            const bounds = event.currentTarget.getBoundingClientRect();
+            sendLiveAction({ type: 'click', x: ((event.clientX - bounds.left) / bounds.width) * 1280, y: ((event.clientY - bounds.top) / bounds.height) * 720 });
+          }} /> : <p className="muted">Waiting for the browser frame...</p>}
+          <div className="live-action-form">
+            <input aria-label="Live selector" placeholder="CSS or XPath selector" value={liveSelector} onChange={(event) => setLiveSelector(event.target.value)} />
+            <input aria-label="Live value" placeholder="Value or URL" value={liveValue} onChange={(event) => setLiveValue(event.target.value)} />
+            <button type="button" onClick={() => sendLiveAction({ type: 'goto', value: liveValue })}>Go</button>
+            <button type="button" onClick={() => sendLiveAction({ type: 'fill', selector: liveSelector, value: liveValue })}>Fill</button>
+            <button type="button" onClick={() => sendLiveAction({ type: 'click', selector: liveSelector })}>Click</button>
+            <button type="button" onClick={() => sendLiveAction({ type: 'wait', value: liveValue || '500' })}>Wait</button>
+          </div>
+        </div> : null}
       </section> : null}
 
       <section className="card run-panel">
