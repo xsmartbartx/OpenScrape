@@ -8,6 +8,7 @@ import { HealthService } from './health.service';
 import { PrismaService } from './prisma.service';
 import { SessionCleanupService } from './session-cleanup.service';
 import { HealthController } from './health.controller';
+import { RequestLoggingMiddleware } from './request-logging.middleware';
 
 
 describe('API smoke', () => {
@@ -20,6 +21,8 @@ describe('API smoke', () => {
     }).compile();
 
     app = module.createNestApplication();
+    const requestLogging = new RequestLoggingMiddleware();
+    app.use(requestLogging.use.bind(requestLogging));
     app.setGlobalPrefix('api/v1');
     await app.init();
   });
