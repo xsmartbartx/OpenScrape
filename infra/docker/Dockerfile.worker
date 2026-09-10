@@ -6,6 +6,7 @@ COPY apps ./apps
 COPY packages ./packages
 
 RUN corepack enable && pnpm install --frozen-lockfile
+RUN pnpm --filter @openscrape/api exec prisma generate --schema prisma/schema.prisma
 RUN pnpm --filter @openscrape/worker build
 
 ENV NODE_ENV=production
