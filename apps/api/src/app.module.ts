@@ -6,6 +6,7 @@ import { AppController } from './app.controller';
 import { ApiKeyGuard } from './api-key.guard';
 import { ApiKeysController } from './api-keys.controller';
 import { BillingController } from './billing.controller';
+import { StripeBillingProvider } from './stripe-billing.provider';
 import { ArtifactRetentionService } from './artifact-retention.service';
 import { AuditController } from './audit.controller';
 import { AuditService } from './audit.service';
@@ -49,6 +50,7 @@ const apiRateLimit = Number(process.env.API_RATE_LIMIT ?? 60);
   providers: [
     PrismaService,
     AuditService,
+    StripeBillingProvider,
     RecorderRuntimeService,
     RecorderGateway,
     ArtifactRetentionService,
