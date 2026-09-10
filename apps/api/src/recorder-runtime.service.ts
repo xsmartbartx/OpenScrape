@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import { lookup } from 'node:dns/promises';
-import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
+import { chromium, type Browser, type BrowserContext, type CDPSession, type Page } from 'playwright';
 import type { WebSocket } from 'ws';
 import { PrismaService } from './prisma.service';
 import { validateTargetUrl } from './url-validation';
@@ -21,6 +21,7 @@ type SessionRuntime = {
   browser: Browser;
   context: BrowserContext;
   page: Page;
+  cdp: CDPSession;
   clients: Set<WebSocket>;
   expiresAt: number;
   expiryTimer: NodeJS.Timeout;
@@ -58,6 +59,8 @@ export class RecorderRuntimeService implements OnModuleDestroy {
         await route.continue();
       });
       await page.goto(startUrl, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+      const cdp = await context.newCDPSession(page);
+      await cdp.send('Page.startScreencast', { format: 'jpeg', quality: 70, maxWidth: 1280, maxHeight: 720 });
 
       const expiresAt = Date.now() + maxSessionMs;
       const runtime: SessionRuntime = {
@@ -67,11 +70,16 @@ export class RecorderRuntimeService implements OnModuleDestroy {
         browser,
         context,
         page,
+        cdp,
         clients: new Set(),
         expiresAt,
         expiryTimer: setTimeout(() => void this.stop(sessionId, 'expired'), maxSessionMs),
       };
       this.sessions.set(sessionId, runtime);
+      cdp.on('Page.screencastFrame', (event: { data: string; sessionId: number }) => {
+        this.broadcast(runtime, { type: 'frame', url: runtime.page.url(), mimeType: 'image/jpeg', data: event.data });
+        void cdp.send('Page.screencastFrameAck', { sessionId: event.sessionId }).catch(() => undefined);
+      });
       await this.prisma.recorderSession.update({
         where: { id: sessionId },
         data: { status: 'running', startedAt: new Date() },
@@ -141,6 +149,7 @@ export class RecorderRuntimeService implements OnModuleDestroy {
       this.clients.delete(client);
       try { client.close(); } catch { /* connection already closed */ }
     }
+    await runtime.cdp.send('Page.stopScreencast').catch(() => undefined);
     await runtime.context.close().catch(() => undefined);
     await runtime.browser.close().catch(() => undefined);
     await this.prisma.recorderSession.updateMany({

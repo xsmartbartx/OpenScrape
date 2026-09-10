@@ -12,7 +12,8 @@ describe('RecorderRuntimeService', () => {
       url: jest.fn().mockReturnValue('https://example.com'),
       locator: jest.fn().mockReturnValue({ first: () => ({ click: jest.fn().mockResolvedValue(undefined) }) }),
     };
-    const context = { newPage: jest.fn().mockResolvedValue(page), close: jest.fn().mockResolvedValue(undefined) };
+    const cdp = { send: jest.fn().mockResolvedValue(undefined), on: jest.fn() };
+    const context = { newPage: jest.fn().mockResolvedValue(page), newCDPSession: jest.fn().mockResolvedValue(cdp), close: jest.fn().mockResolvedValue(undefined) };
     const browser = { newContext: jest.fn().mockResolvedValue(context), close: jest.fn().mockResolvedValue(undefined) };
     (chromium.launch as jest.Mock).mockResolvedValue(browser);
     const prisma = {
