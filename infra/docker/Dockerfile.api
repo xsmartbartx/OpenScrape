@@ -1,0 +1,13 @@
+FROM mcr.microsoft.com/playwright:v1.63.0-noble
+
+WORKDIR /app
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json ./
+COPY apps ./apps
+COPY packages ./packages
+
+RUN corepack enable && pnpm install --frozen-lockfile
+RUN pnpm --filter @openscrape/api build
+
+ENV NODE_ENV=production
+EXPOSE 3001
+CMD ["pnpm", "--filter", "@openscrape/api", "start:prod"]

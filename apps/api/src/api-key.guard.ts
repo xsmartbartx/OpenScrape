@@ -11,7 +11,8 @@ export class ApiKeyGuard implements CanActivate {
     if (process.env.API_KEYS_REQUIRED !== 'true') return true;
 
     const request = context.switchToHttp().getRequest<Request>();
-    if (request.path.includes('/health') || request.path.includes('/auth/') || request.path.includes('/api-keys') || request.path.includes('/billing/webhook/')) return true;
+    if (request.path.includes('/health') || request.path.includes('/auth/') || request.path.includes('/api-keys') || request.path.includes('/billing/webhook/') || request.path.includes('/billing/stripe/webhook')) return true;
+    if (process.env.AUTH_REQUIRED === 'true' && request.header('authorization')?.startsWith('Bearer ')) return true;
 
     const providedKey = request.header('x-api-key');
     if (!providedKey) throw new UnauthorizedException('API key required.');

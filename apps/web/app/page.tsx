@@ -59,7 +59,7 @@ const defaultForm = {
 };
 
 export default function HomePage() {
-  const apiBaseUrl = 'http://localhost:3001/api/v1';
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
   const [robots, setRobots] = useState<Robot[]>([]);
   const [runs, setRuns] = useState<RunStatus[]>([]);
   const [selectedRobotId, setSelectedRobotId] = useState<string>();

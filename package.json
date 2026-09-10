@@ -18,6 +18,7 @@
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down",
     "db:backup": "sh ./scripts/db-backup.sh",
-    "db:restore": "sh ./scripts/db-restore.sh"
+    "db:restore": "sh ./scripts/db-restore.sh",
+    "db:restore:drill": "sh ./scripts/db-restore-drill.sh"
   }
 }
