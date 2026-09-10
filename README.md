@@ -413,12 +413,12 @@ production.
 
 Use `npx pnpm` when pnpm is not installed globally. Do not run `npx tsc`,
 because that can resolve an unrelated npm package named `tsc`.
-Production packaging is provided by `docker-compose.production.yml` and the
-three images under `infra/docker/`. It includes health checks, startup migration
-deployment, secret injection through `.env`, Redis authentication, restart
-policies, loopback-only bindings, structured logs, and resource boundaries that
-can be completed by the hosting platform. See [docs/production.md](docs/production.md)
-and [docs/observability.md](docs/observability.md).
+Production packaging is provided by `docker-compose.production.yml`, Caddy, and
+the three images under `infra/docker/`. It includes automatic ACME HTTPS,
+health checks, startup migration deployment, secret-file injection, Redis
+authentication, restart policies, loopback-only application bindings, structured
+logs, and resource limits. See [docs/production.md](docs/production.md) and
+[docs/observability.md](docs/observability.md).
 
 ## 16. Security & Anti-Blocking
 
