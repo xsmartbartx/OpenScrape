@@ -11,7 +11,7 @@ export class SessionGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
-    if (request.path.includes('/health') || request.path.includes('/auth/') || request.path.includes('/billing/webhook/')) return true;
+    if (request.path.includes('/health') || request.path.includes('/auth/') || request.path.includes('/billing/webhook/') || request.path.includes('/billing/stripe/webhook')) return true;
     if (process.env.AUTH_REQUIRED !== 'true') return true;
 
     const authorization = request.header('authorization');

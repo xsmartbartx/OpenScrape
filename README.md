@@ -528,7 +528,7 @@ and [docs/observability.md](docs/observability.md).
 - [x] Sanitized captured-HTML recorder preview with click-to-ranked-selector steps.
 - [x] Playwright replay for recorded `goto`, `click`, `type/fill`, and `wait` steps.
 - [x] Persisted recorder session lifecycle (`start/list/stop`) foundation.
-- [x] Live browser recorder session with authenticated preview and bidirectional action streaming.
+- [x] Live browser recorder session with authenticated CDP screencast preview and bidirectional action streaming.
 
 ### Phase 3 — Production product
 
