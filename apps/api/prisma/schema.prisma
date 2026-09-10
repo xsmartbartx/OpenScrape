@@ -38,6 +38,7 @@ model Workspace {
   robots      Robot[]
   auditEvents AuditEvent[]
   schedules   Schedule[]
+  recorderSessions RecorderSession[]
   subscription Subscription?
 }
 
