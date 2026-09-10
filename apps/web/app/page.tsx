@@ -83,7 +83,7 @@ export default function HomePage() {
   const [liveStatus, setLiveStatus] = useState<'idle' | 'connecting' | 'ready' | 'stopped'>('idle');
   const [liveSelector, setLiveSelector] = useState('');
   const [liveValue, setLiveValue] = useState('');
-  const recorderSocket = useRef<WebSocket>();
+  const recorderSocket = useRef<WebSocket | null>(null);
   const [metrics, setMetrics] = useState<WorkspaceMetrics>();
 
   const apiFetch = (path: string, options: RequestInit = {}) => {
