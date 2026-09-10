@@ -5,6 +5,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json ./
 COPY apps ./apps
 COPY packages ./packages
 COPY infra/docker/entrypoint.sh ./infra/docker/entrypoint.sh
+RUN chmod +x ./infra/docker/entrypoint.sh
 
 RUN corepack enable && pnpm install --frozen-lockfile
 RUN pnpm --filter @openscrape/api exec prisma generate --schema prisma/schema.prisma
