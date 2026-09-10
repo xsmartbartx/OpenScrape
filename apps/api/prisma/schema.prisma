@@ -124,6 +124,22 @@ model Robot {
   workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
   schedules Schedule[]
   steps     RobotStep[]
+  recorderSessions RecorderSession[]
+}
+
+model RecorderSession {
+  id          String   @id
+  workspaceId String
+  robotId     String
+  startUrl    String
+  status      String   @default("created")
+  startedAt   DateTime @default(now())
+  stoppedAt   DateTime?
+  createdAt   DateTime @default(now())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  robot       Robot     @relation(fields: [robotId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, status])
 }
 
 model RobotStep {
